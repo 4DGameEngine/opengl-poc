@@ -69,9 +69,8 @@ std::vector<comVec3> lin_interpolation_c2t(GLuint indices[], GLfloat vertices[],
     //std::cout<<"cycle"<<std::endl;
     std::vector<comVec3> cycle = cycleSearch(points);
     std::vector<comVec3>::iterator cit = cycle.begin();
-    /*for (cit=cycle.begin(); cit!=cycle.end(); cit++){
-        std::cout<<glm::to_string((*cit).content)<<std::endl;
-    }*/
+
+    //std::cout<<cycle.size()<<std::endl;
     return cycle;
 
 }
@@ -154,6 +153,29 @@ std::vector<comVec3> cycleSearch( std::vector<comVec3>& lines){
         if (visited[current]){
             std::vector<int> cyc= cyc_found(history, current, previous);
             std::vector<int>::iterator cit;
+
+            //remove intermediate pts
+            cyc.push_back(current);
+            std::vector<int> to_rmv;
+            if (check_collinear(v_vertices[cyc[cyc.size()-2]].content,
+                                v_vertices[cyc[0]].content,
+                                v_vertices[cyc[1]].content)){
+                to_rmv.push_back(0);
+            }
+            for (int i =0; i <(int)cyc.size()-2; i++){
+                if (check_collinear(v_vertices[cyc[i]].content,
+                                    v_vertices[cyc[i+1]].content,
+                                    v_vertices[cyc[i+2]].content)){
+                    to_rmv.push_back(i+1);
+                }
+            }
+            while (to_rmv.size()!=0){
+                int i = to_rmv.back();
+                cyc.erase(cyc.begin()+i);
+                to_rmv.pop_back();
+            }
+            cyc.pop_back();
+
             int i = history.top();
             history.pop();
             while (i!= -1){
@@ -165,7 +187,6 @@ std::vector<comVec3> cycleSearch( std::vector<comVec3>& lines){
             for (cit=cyc.begin(); cit!=cyc.end(); cit++){
                 cycle.push_back(v_vertices[*cit]);
             }
-
         }
         else{
             visited[current] = true;
@@ -290,4 +311,9 @@ std::vector<int> cyc_found (std::stack<int>& stacky, int target, int previous){
     return cyc;
 }
 
-
+bool check_collinear(comVec3 a, comVec3 b, comVec3 c){
+    comVec3 ab = a-b;
+    comVec3 ac = a-c;
+    comVec3 cp = ab*ac;
+    return (cp==comVec3(glm::vec3(0.0f,0.0f,0.0f)));
+}

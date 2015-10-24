@@ -18,5 +18,6 @@ std::vector<comVec3> lin_interpolation_c2t(GLuint indices[], GLfloat vertices[],
 std::vector<comVec3> cycleSearch( std::vector<comVec3>& lines);
 bool adjacent (std::vector<int>& edges, std::stack<int>& stacky, std::stack<int>& history, std::stack<int>& previouses, int current, int previous);
 std::vector<int> cyc_found (std::stack<int>& stacky, int target, int previous);
+bool check_collinear(comVec3 a, comVec3 b, comVec3 c);
 
 #endif

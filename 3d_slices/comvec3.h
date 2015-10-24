@@ -15,6 +15,8 @@ class comVec3 {
     inline bool operator>=(const comVec3& r) const;
     inline bool operator<=(const comVec3& r) const;
     bool operator == (const comVec3& r) const;
+    comVec3 operator- (const comVec3& r) const;
+    comVec3 operator* (const comVec3& r) const;
 
 };
 

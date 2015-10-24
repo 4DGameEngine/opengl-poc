@@ -17,3 +17,14 @@ bool comVec3::operator> (const comVec3& r) const{ return r<*this; }
 bool comVec3::operator>=(const comVec3& r) const{ return !(*this<r); }
 bool comVec3::operator<=(const comVec3& r) const{ return !(*this>r); }
 bool comVec3::operator==(const comVec3& r) const{ return content==r.content; }
+comVec3 comVec3::operator- (const comVec3& r) const{
+    return comVec3(glm::vec3(content.x-r.content.x,
+                content.y-r.content.y, content.z-r.content.z));
+}
+comVec3 comVec3::operator * (const comVec3& r) const{
+    return comVec3(glm::vec3(
+        content.y*r.content.z-r.content.y*content.z,
+        content.z*r.content.x-r.content.z*content.x,
+        content.x*r.content.y-r.content.x*content.y));
+}
+
