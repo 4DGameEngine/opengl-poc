@@ -104,7 +104,7 @@ int main()
     // ---------- BEGIN OPENGL ----------- //
     
     // Shader creation
-    Shader edgeShader("vertex_shader_unsliced.glsl", "fragment_shader_unsliced.glsl");
+    Shader edgeShader("vertex_shader.glsl", "fragment_shader.glsl");
 
     // Data
     GLfloat vertices[] = {
@@ -296,7 +296,7 @@ int main()
                 projVert[i*7+4] = 0.0f;
                 projVert[i*7+5] = 1.0f;
             }
-            projVert[i*7+6] = (viewVert.w + 5.0f)/2.0f;
+            projVert[i*7+6] = viewVert.w;
         }
 
         // 3D-2D Transformations
@@ -330,7 +330,7 @@ int main()
                               (GLvoid*)(3*sizeof(GL_FLOAT)));
         glEnableVertexAttribArray(1);
 
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glDrawElements(GL_TRIANGLES, 8*12*3, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
