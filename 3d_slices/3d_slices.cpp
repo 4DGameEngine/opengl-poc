@@ -26,6 +26,15 @@ const GLuint WIDTH = 600, HEIGHT = 600;
 GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
 GLfloat lastFrame = 0.0f;  	// Time of last frame
 
+//camera properties
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  10.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
+GLfloat yaw   = -90.0f;	// Yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right (due to how Eular angles work) so we initially rotate a bit to the left.
+GLfloat pitch =   0.0f;
+GLfloat lastX = WIDTH/2; //initial cursor position
+GLfloat lastY = HEIGHT/2;
+float fov = 45.0f;
 
 int main(){
 
@@ -315,7 +324,7 @@ int main(){
     glGenBuffers(1, &VBO);
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices_to_draw.size(), &vertices_to_draw[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(&vertices_to_draw[0])*vertices_to_draw.size(), &vertices_to_draw[0], GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
     glEnableVertexAttribArray(0);  
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -333,8 +342,26 @@ int main(){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         ourShader.Use();
+
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 projection;
+        model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        projection = glm::perspective(glm::radians(fov), (GLfloat)WIDTH/(GLfloat)HEIGHT, 0.1f, 100.0f);  
+        // Get their uniform location
+        GLint modelLoc = glGetUniformLocation(ourShader.Program, "model");
+        GLint viewLoc = glGetUniformLocation(ourShader.Program, "view");
+        GLint projLoc = glGetUniformLocation(ourShader.Program, "projection");
+
+        // Pass them to the shaders
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        // Note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection)); 
+
         glBindVertexArray(VAO);
-        glDrawArrays(GL_POLYGON, 0, 8); 
+        glDrawArrays(GL_POLYGON, 0, 4); 
         glBindVertexArray(0);
 
         glfwSwapBuffers(window);
