@@ -329,6 +329,8 @@ int main(){
     glEnableVertexAttribArray(0);  
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glEnable(GL_DEPTH_TEST);
 
     //main loop
     while(!glfwWindowShouldClose(window)) {
@@ -347,6 +349,7 @@ int main(){
         glm::mat4 view;
         glm::mat4 projection;
         model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, (GLfloat)glfwGetTime() * 1.0f, glm::vec3(0.5f, 1.0f, 0.0f)); 
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         projection = glm::perspective(glm::radians(fov), (GLfloat)WIDTH/(GLfloat)HEIGHT, 0.1f, 100.0f);  
         // Get their uniform location
@@ -361,7 +364,7 @@ int main(){
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection)); 
 
         glBindVertexArray(VAO);
-        glDrawArrays(GL_POLYGON, 0, 4); 
+        glDrawArrays(GL_TRIANGLES, 0, vertices_to_draw.size());
         glBindVertexArray(0);
 
         glfwSwapBuffers(window);

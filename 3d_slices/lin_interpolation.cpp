@@ -79,13 +79,24 @@ std::vector<comVec3> lin_interpolation_c2t(GLuint indices[], GLfloat vertices[],
 
 std::vector<comVec3> maketrianglesfromsquares(std::vector<comVec3> points){
     std::vector<comVec3> trigs;
+    std::vector<comVec3>::iterator tit;
+    
+    /*for (tit=points.begin(); tit!=points.end(); tit++){
+        std::cout<<glm::to_string((*tit).content)<<std::endl;
+    }
+    std::cout<<std::endl;*/
 
     for (int i=0; i<3; i++){
         trigs.push_back(points[i]);
     }
-    for (int i=1; i<4; i++){
-        trigs.push_back(points[i]);
+    trigs.push_back(points[0]);
+    trigs.push_back(points[2]);
+    trigs.push_back(points[3]);
+
+    /*for (tit=trigs.begin();tit!=trigs.end();tit++){
+        std::cout<<glm::to_string((*tit).content)<<std::endl;
     }
+    std::cout<<std::endl;*/
     return trigs;
 }
 
