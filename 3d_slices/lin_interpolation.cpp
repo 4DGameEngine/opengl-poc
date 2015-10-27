@@ -71,8 +71,22 @@ std::vector<comVec3> lin_interpolation_c2t(GLuint indices[], GLfloat vertices[],
     std::vector<comVec3>::iterator cit = cycle.begin();
 
     //std::cout<<cycle.size()<<std::endl;
+    
+    if ((int)cycle.size()>0)
+        return maketrianglesfromsquares(cycle);
     return cycle;
+}
 
+std::vector<comVec3> maketrianglesfromsquares(std::vector<comVec3> points){
+    std::vector<comVec3> trigs;
+
+    for (int i=0; i<3; i++){
+        trigs.push_back(points[i]);
+    }
+    for (int i=1; i<4; i++){
+        trigs.push_back(points[i]);
+    }
+    return trigs;
 }
 
 std::vector<comVec3> cycleSearch( std::vector<comVec3>& lines){

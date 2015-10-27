@@ -15,6 +15,9 @@ std::vector<comVec3> lin_interpolation_t2l(glm::vec4 a, glm::vec4 b, glm::vec4 c
 //size is the number of triangles for each 3d object
 std::vector<comVec3> lin_interpolation_c2t(GLuint indices[], GLfloat vertices[], int start, int size, float w);
 
+//temp
+std::vector<comVec3> maketrianglesfromsquares(std::vector<comVec3> points);
+
 std::vector<comVec3> cycleSearch( std::vector<comVec3>& lines);
 bool adjacent (std::vector<int>& edges, std::stack<int>& stacky, std::stack<int>& history, std::stack<int>& previouses, int current, int previous);
 std::vector<int> cyc_found (std::stack<int>& stacky, int target, int previous);

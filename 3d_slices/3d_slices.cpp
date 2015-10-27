@@ -309,7 +309,7 @@ int main(){
     for (itv=list_ver.begin(); itv!=list_ver.end(); itv++){
         std::cout<<glm::to_string((*itv).content)<<std::endl;
     }
-    //std::cout<<list_ver.size()<<std::endl;
+    std::cout<<"size: "<<list_ver.size()<<std::endl;
     
     std::vector<GLfloat> vertices_to_draw;
     for (itv=list_ver.begin(); itv!=list_ver.end(); itv++){
