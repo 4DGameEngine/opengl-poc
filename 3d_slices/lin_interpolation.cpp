@@ -202,8 +202,15 @@ std::vector<comVec3> cycleSearch( std::vector<comVec3>& lines){
             }
         }
     }
+
+    std::vector<comVec3> c_half;
+
+    //discard the repeated cycle
+    for (int i = 0; i<(int)cycle.size()/2; i++){
+        c_half.push_back(cycle[i]);
+    }
         
-    return cycle;
+    return c_half;
 }
 
 bool adjacent (std::vector<int>& edges, std::stack<int>& stacky, std::stack<int>& history, std::stack<int>& previouses,  int current, int previous){
