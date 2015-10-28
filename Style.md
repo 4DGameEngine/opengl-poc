@@ -5,6 +5,10 @@ Please follow these whenever possible/sane from now on.
 Be Sensible. If there is something really wrong with following the guidelines, and
 there is a reasonable alternative, then do it.
 
+## GLSL
+* GLSL files should end in '.glsl'
+* GLSL files should follow roughly the same formatting as C++, but not really strict on this.
+
 ## Indentation, Line Breaks
 * Lines should be STRICTLY 80 CHARACTERS OR LESS. (Whenever sane.)
 * Indents should be 4 spaces wide.
