@@ -127,7 +127,7 @@ int main()
          0.8f,   0.8f,  -0.8f,  -0.8f,
          0.8f,  -0.8f,  -0.8f,  -0.8f,
         -0.8f,  -0.8f,  -0.8f,  -0.8f,
-        -0.8f,   0.8f,  -0.8f,  -0.8f
+        -0.8f,   0.8f,  -0.8f,  -0.8f,
     };
 
     GLuint indices[] = {
@@ -234,7 +234,7 @@ int main()
          5, 13, 12,
          5, 12,  4,
          9,  1,  0,
-         9,  0,  8
+         9,  0,  8,
     };
 
     // Textures
@@ -271,8 +271,10 @@ int main()
         glm::vec4 from(0.0f, 0.0f, 0.0f, 4.0f), to(0.0f, 0.0f, 0.0f, 0.0f); 
         glm::vec4 up(0.0f, 1.0f, 0.0f, 0.0f), over(0.0f, 0.0f, 1.0f, 0.0f);
         view4D = lookAt4D(from, to, up, over);
-        std::cout << "Proj Mat: " << std::endl;
+
+        std::cout << "View Mat: " << std::endl;
         printMat(view4D, 4, 4);
+
         projection4D = proj4D();
 
         GLfloat *projVert = new GLfloat[16*7];
@@ -282,8 +284,10 @@ int main()
             glm::vec4 vert4(vertices[i*4], vertices[i*4+1],
                             vertices[i*4+2], vertices[i*4+3]);
             glm::vec4 viewVert = view4D * (model4D * vert4 - from); 
-            printVec(viewVert, 4);
             glm::vec3 vert3 = projection4D * view4D * (model4D * vert4 - from);
+
+            printVec(viewVert, 4);
+
             projVert[i*7] = vert3.x;
             projVert[i*7+1] = vert3.y;
             projVert[i*7+2] = vert3.z;
@@ -354,20 +358,13 @@ glm::mat4 lookAt4D(const glm::vec4 &from, const glm::vec4 &to,
     glm::mat4 viewMat;
     glm::vec4 A, B, C, D;
     D = glm::normalize(from - to);
-    std::cout << "D ";
-    printVec(D, 4);
-    std::cout << "A ";
     A = glm::normalize(cross4D(up, over, D));
-    std::cout << "B ";
     B = glm::normalize(cross4D(over, D, A));
-    std::cout << "C ";
     C = cross4D(D, A, B);
     viewMat[0] = A;
     viewMat[1] = B;
     viewMat[2] = C;
     viewMat[3] = D;
-    // I hope this preserves "right-handedness"
-    //assert(glm::normalize(cross4D(A, B, C)) == D);
     return glm::transpose(viewMat);
 }
 
