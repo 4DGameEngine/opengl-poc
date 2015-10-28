@@ -49,14 +49,14 @@ int main(){
          0.5f,  -0.5f,  -0.5f,   0.5f,
         -0.5f,  -0.5f,  -0.5f,   0.5f,
         -0.5f,   0.5f,  -0.5f,   0.5f,
-         0.5f,   0.5f,   0.5f,  -0.5f,
-         0.5f,  -0.5f,   0.5f,  -0.5f,  
-        -0.5f,  -0.5f,   0.5f,  -0.5f,
-        -0.5f,   0.5f,   0.5f,  -0.5f,
-         0.5f,   0.5f,  -0.5f,  -0.5f,
-         0.5f,  -0.5f,  -0.5f,  -0.5f,
-        -0.5f,  -0.5f,  -0.5f,  -0.5f,
-        -0.5f,   0.5f,  -0.5f,  -0.5f
+         1.5f,   1.5f,   1.5f,  -0.5f,
+         1.5f,  -1.5f,   1.5f,  -0.5f,  
+        -1.5f,  -1.5f,   1.5f,  -0.5f,
+        -1.5f,   1.5f,   1.5f,  -0.5f,
+         1.5f,   1.5f,  -1.5f,  -0.5f,
+         1.5f,  -1.5f,  -1.5f,  -0.5f,
+        -1.5f,  -1.5f,  -1.5f,  -0.5f,
+        -1.5f,   1.5f,  -1.5f,  -0.5f
     };
 
     /* vertices order
@@ -223,6 +223,9 @@ int main(){
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
+    float w = 0.0;
+    bool dec = true;
+
     //main loop
     while(!glfwWindowShouldClose(window)) {
         GLfloat currentFrame = glfwGetTime();
@@ -238,7 +241,20 @@ int main(){
 
         std::vector<comVec3> list_ver;
         std::vector<comVec3>::iterator itv=list_ver.begin();
-        float w = 0.0;
+
+        if (dec){
+            if (w<0.45){
+                w+=0.05;
+            }
+            else dec = false;
+        }
+        else{
+            if (w>(-0.45)){
+                w-=0.05;
+            }
+            else dec = true;
+        }
+        std::cout<<"w: "<<w<<std::endl;
 
         for (int i=0; i<288; i+=36){
             std::vector<comVec3> trigs = lin_interpolation_c2t(indices, vertices, i, 12, w);
@@ -252,13 +268,13 @@ int main(){
             vertices_to_draw.push_back((*itv).content.z);
         }
 
-        std::cout<<"Vertices:"<<std::endl;
+        /*std::cout<<"Vertices:"<<std::endl;
         for (auto it=vertices_to_draw.begin(); it!=vertices_to_draw.end(); it++) {
             std::cout<<*it++<<std::endl;
             std::cout<<*it++<<std::endl;
             std::cout<<*it<<std::endl;
         }
-        std::cout<<"size: "<<vertices_to_draw.size()<<std::endl;
+        std::cout<<"size: "<<vertices_to_draw.size()<<std::endl;*/
 
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
