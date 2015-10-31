@@ -12,7 +12,7 @@ OGL_LIBRARY_PATH=$(HOME)/opengl/lib
 OGL_INCLUDE_PATH=$(HOME)/opengl/include
 OGL_STATIC_LIBS=$(OGL_LIBRARY_PATH)/libGLEW.a $(OGL_LIBRARY_PATH)/libsoil2.a
 OGL_DYNAMIC_LIBS=-lglfw
-OUTFILE=unsliced
+OUTFILE=sliced
 
 UNAME_S=$(shell uname -s)
 ifeq ($(UNAME_S),Linux)

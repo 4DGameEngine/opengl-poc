@@ -6,7 +6,7 @@ Be Sensible. If there is something really wrong with following the guidelines, a
 there is a reasonable alternative, then do it.
 
 ## GLSL
-* GLSL files should end in '.glsl'
+* GLSL files should end in '.frag' or '.vert'
 * GLSL files should follow roughly the same formatting as C++, but not really strict on this.
 
 ## Indentation, Line Breaks
