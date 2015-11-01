@@ -1,12 +1,16 @@
-#include "shader.h"
-
 #include <iostream>
+#include <vector>
+#include <utility>
 #include <cassert>
 #include <cmath>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_access.hpp>
+#include <glm/ext.hpp>
+
+#include "shader.h"
 
 // GLEW
 // A little bit of hacking here to get my autocomplete to work
@@ -31,18 +35,28 @@
 // SOIL2
 #include <SOIL2.h>
 
+using std::vector;
+using std::cout;
+using std::endl;
+using std::pair;
+using glm::vec4;
+using glm::vec3;
+using glm::mat4;
+using glm::to_string;
+
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
                   int mode);
-glm::mat4 lookAt4D(const glm::vec4 &from, const glm::vec4 &to, 
-                   const glm::vec4 &up, const glm::vec4 &over);
-glm::vec4 cross4D(const glm::vec4 &v0, const glm::vec4 &v1,
-                  const glm::vec4 &v2);
-glm::mat4x3 proj4D();
-template <class T>
-void printMat(const T &m, int row, int col);
-template <class T>
-void printVec(const T &v, int col);
+mat4 lookAt4D(const vec4 &from, const vec4 &to, 
+              const vec4 &up, const vec4 &over);
+vec4 cross4D(const vec4 &v0, const vec4 &v1,
+             const vec4 &v2);
+vector<pair<vec3, vec3> > *takeSlice(const GLfloat vertices[], int numVertices, 
+                                     const GLuint indices[], int numTriangles, 
+                                     GLfloat w);
+void populateVector(vector<vec4> &verticesVector, const GLfloat vertices[],
+                    int numVertices, int dimensions);
+vec4 intersectLine(const vec4 &start, const vec4 &end, int w, bool &success);
 
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;
@@ -51,7 +65,7 @@ const GLuint WIDTH = 800, HEIGHT = 600;
 // game loop
 int main()
 {
-    std::cout << "Starting GLFW context, OpenGL 3.3" << std::endl;
+    cout << "Starting GLFW context, OpenGL 3.3" << endl;
     // Init GLFW
     glfwInit();
     // Set all the required options for GLFW
@@ -69,7 +83,7 @@ int main()
                                           nullptr, nullptr);    
     if (window == nullptr)
     {
-        std::cout << "Failed to create GLFW window" << std::endl;
+        cout << "Failed to create GLFW window" << endl;
         glfwTerminate();
         return -1;
     }
@@ -85,7 +99,7 @@ int main()
     // Initialize GLEW to setup the OpenGL Function pointers
     if (glewInit() != GLEW_OK)
     {
-        std::cout << "Failed to initialize GLEW" << std::endl;
+        cout << "Failed to initialize GLEW" << endl;
         return -1;
     }    
 #endif
@@ -119,15 +133,15 @@ int main()
         -0.6f,  -0.6f,  -0.6f,   0.6f,
         -0.6f,   0.6f,  -0.6f,   0.6f,
 
-         0.8f,   0.8f,   0.8f,  -0.8f,
-         0.8f,  -0.8f,   0.8f,  -0.8f,  
-        -0.8f,  -0.8f,   0.8f,  -0.8f,
-        -0.8f,   0.8f,   0.8f,  -0.8f,
+         0.6f,   0.6f,   0.6f,  -0.6f,
+         0.6f,  -0.6f,   0.6f,  -0.6f,  
+        -0.6f,  -0.6f,   0.6f,  -0.6f,
+        -0.6f,   0.6f,   0.6f,  -0.6f,
 
-         0.8f,   0.8f,  -0.8f,  -0.8f,
-         0.8f,  -0.8f,  -0.8f,  -0.8f,
-        -0.8f,  -0.8f,  -0.8f,  -0.8f,
-        -0.8f,   0.8f,  -0.8f,  -0.8f,
+         0.6f,   0.6f,  -0.6f,  -0.6f,
+         0.6f,  -0.6f,  -0.6f,  -0.6f,
+        -0.6f,  -0.6f,  -0.6f,  -0.6f,
+        -0.6f,   0.6f,  -0.6f,  -0.6f,
     };
 
     GLuint indices[] = {
@@ -237,6 +251,14 @@ int main()
          9,  0,  8,
     };
 
+    vector<pair<vec3, vec3> > *slice = takeSlice(vertices, 16, indices, 
+                                                 8*12, 0.0f);
+    for (auto &pair : *slice) {
+        cout << to_string(pair.first) << " " << to_string(pair.second) << endl;
+    }
+    cout << slice->size() << endl;
+    delete slice;
+
     // Textures
 
     // Set up buffer stuff
@@ -260,57 +282,40 @@ int main()
         glLineWidth(3);
 
         // 4D-3D Transformations
-        glm::mat4 model4D(1.0f), view4D;
-        GLfloat theta = glm::radians((GLfloat)glfwGetTime() * 50.0f);
+        mat4 model4D(1.0f), view4D;
+        /*GLfloat theta = glm::radians((GLfloat)glfwGetTime() * 50.0f);
         GLfloat cs = cos(theta), sn = sin(theta);
         model4D[0][0] = cs;
         model4D[0][3] = -sn;
         model4D[3][0] = sn;
-        model4D[3][3] = cs;
-        glm::mat4x3 projection4D;
-        glm::vec4 from(0.0f, 0.0f, 0.0f, 4.0f), to(0.0f, 0.0f, 0.0f, 0.0f); 
-        glm::vec4 up(0.0f, 1.0f, 0.0f, 0.0f), over(0.0f, 0.0f, 1.0f, 0.0f);
+        model4D[3][3] = cs;*/
+        vec4 from(0.0f, 0.0f, 0.0f, 4.0f), to(0.0f, 0.0f, 0.0f, 0.0f); 
+        vec4 up(0.0f, 1.0f, 0.0f, 0.0f), over(0.0f, 0.0f, 1.0f, 0.0f);
         view4D = lookAt4D(from, to, up, over);
+        
 
-        std::cout << "View Mat: " << std::endl;
-        printMat(view4D, 4, 4);
-
-        projection4D = proj4D();
-
+        /*
         GLfloat *projVert = new GLfloat[16*7];
-        std::cout << "--------------------------------" << std::endl;
+        cout << "--------------------------------" << endl;
         for(int i = 0; i != 16; i++) {
             // Project each vertex to the 3D space
-            glm::vec4 vert4(vertices[i*4], vertices[i*4+1],
-                            vertices[i*4+2], vertices[i*4+3]);
-            glm::vec4 viewVert = view4D * (model4D * vert4 - from); 
-            glm::vec3 vert3 = projection4D * view4D * (model4D * vert4 - from);
+            vec4 vert4(vertices[i*4], vertices[i*4+1], vertices[i*4+2],
+                       vertices[i*4+3]);
+            vec4 viewVert = view4D * (model4D * vert4 - from); 
 
             printVec(viewVert, 4);
 
-            projVert[i*7] = vert3.x;
-            projVert[i*7+1] = vert3.y;
-            projVert[i*7+2] = vert3.z;
-            if (i < 8) {
-                projVert[i*7+3] = 1.0f;
-                projVert[i*7+4] = 0.0f;
-                projVert[i*7+5] = 0.0f;
-            } else {
-                projVert[i*7+3] = 0.0f;
-                projVert[i*7+4] = 0.0f;
-                projVert[i*7+5] = 1.0f;
-            }
-            projVert[i*7+6] = (viewVert.w + 5.0f)/2.0f;
         }
 
         // 3D-2D Transformations
-        glm::mat4 view3D = glm::lookAt(glm::vec3(3.0f, 1.2f, 2.0f),
-                                       glm::vec3(0.0f, 0.0f, 0.0f),
-                                       glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 proj3D = glm::perspective(glm::radians(45.0f),
-                                            (float)WIDTH/(float)HEIGHT,
-                                            0.1f, 100.0f);
+        mat4 view3D = glm::lookAt(vec3(3.0f, 1.2f, 2.0f),
+                                  vec3(0.0f, 0.0f, 0.0f),
+                                  vec3(0.0f, 1.0f, 0.0f));
+        mat4 proj3D = glm::perspective(glm::radians(45.0f), 
+                                       (float)WIDTH/(float)HEIGHT,
+                                       0.1f, 100.0f);
         // Shader Uniforms
+        
         edgeShader.Use();
 
         GLint viewLoc = glGetUniformLocation(edgeShader.Program,
@@ -323,7 +328,8 @@ int main()
         // Load Vertices
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, 16*7*sizeof(GL_FLOAT), projVert, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, 16*7*sizeof(GL_FLOAT), projVert,
+                     GL_DYNAMIC_DRAW);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, 
                      GL_DYNAMIC_DRAW);
@@ -338,10 +344,10 @@ int main()
         glDrawElements(GL_TRIANGLES, 8*12*3, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
-        // Swap the screen buffers
+        // Swap the screen buffers*/
         glfwSwapBuffers(window);
 
-        delete[] projVert;
+        //delete[] projVert;
     }
 
     // Terminate GLFW, clearing any resources allocated by GLFW.
@@ -352,11 +358,81 @@ int main()
     return 0;
 }
 
-glm::mat4 lookAt4D(const glm::vec4 &from, const glm::vec4 &to,
-                   const glm::vec4 &up, const glm::vec4 &over)
+vector<pair<vec3, vec3> > *takeSlice(const GLfloat vertices[], int numVertices,
+                                     const GLuint indices[], int numTriangles,
+                                     GLfloat w)
 {
-    glm::mat4 viewMat;
-    glm::vec4 A, B, C, D;
+    vector<pair<vec3, vec3> > *intersects = new vector<pair<vec3, vec3> >;
+    vector<vec4> verticesVector;
+    populateVector(verticesVector, vertices, numVertices, 4);
+
+    for (int i = 0; i < numTriangles; i++) {
+        // Todo: Orientation?
+        vec4 point0 = verticesVector[indices[3*i]];
+        vec4 point1 = verticesVector[indices[3*i+1]];
+        vec4 point2 = verticesVector[indices[3*i+2]];
+
+        bool flag0, flag1, flag2;
+        vec3 intersect0(intersectLine(point0, point1, w, flag0)), 
+             intersect1(intersectLine(point1, point2, w, flag1)),
+             intersect2(intersectLine(point2, point0, w, flag2));
+        pair<vec3, vec3> line0(intersect0, intersect1),
+                         line1(intersect1, intersect2),
+                         line2(intersect2, intersect0);
+
+        if (flag0 && flag1) intersects->push_back(line0);
+        if (flag1 && flag2) intersects->push_back(line1);
+        if (flag2 && flag0) intersects->push_back(line2);
+        if (flag0 && !flag1 && !flag2)
+            intersects->push_back(pair<vec3, vec3>(intersect0, intersect0));
+        if (!flag0 && flag1 && !flag2)
+            intersects->push_back(pair<vec3, vec3>(intersect1, intersect1));
+        if (!flag0 && !flag1 && flag2)
+            intersects->push_back(pair<vec3, vec3>(intersect2, intersect2));
+    }
+
+    return intersects;
+}
+
+void populateVector(vector<vec4> &verticesVector, const GLfloat vertices[],
+                    int numVertices, int dimensions)
+{
+    for (int i = 0; i < numVertices; i++) {
+        verticesVector.push_back(vec4(vertices[dimensions*i],
+                                      vertices[dimensions*i+1],
+                                      vertices[dimensions*i+2],
+                                      vertices[dimensions*i+3]));
+    }
+}
+
+vec4 intersectLine(const vec4 &start, const vec4 &end, int w, bool &success)
+{
+    // Don't know if this should be more robust
+    if (fabs(end.w - start.w) < 0.01f) {
+        if (fabs(w - start.w) < 0.01f) {
+            success = true;
+            return start;
+        } else {
+            success = false;
+            return vec4();
+        }
+    }
+
+    GLfloat ratio = (w - start.w)/(end.w - start.w);
+    if (ratio < -0.01f || ratio > 1.01f) {
+        success = false;
+        return vec4();
+    } else {
+        success = true;
+        return start + ratio * (end - start);
+    }
+}
+
+mat4 lookAt4D(const vec4 &from, const vec4 &to, const vec4 &up, 
+              const vec4 &over)
+{
+    mat4 viewMat;
+    vec4 A, B, C, D;
     D = glm::normalize(from - to);
     A = glm::normalize(cross4D(up, over, D));
     B = glm::normalize(cross4D(over, D, A));
@@ -368,75 +444,35 @@ glm::mat4 lookAt4D(const glm::vec4 &from, const glm::vec4 &to,
     return glm::transpose(viewMat);
 }
 
-glm::vec4 cross4D(const glm::vec4 &v0, const glm::vec4 &v1,
-                  const glm::vec4 &v2)
+vec4 cross4D(const vec4 &v0, const vec4 &v1, const vec4 &v2)
 {
-    glm::vec4 crossVec;
+    vec4 crossVec;
     glm::mat3 tempMat;
-    std::cout << "Vectors: " << std::endl;
-    printVec(v0, 4);
-    printVec(v1, 4);
-    printVec(v2, 4);
-    tempMat[0] = glm::vec3(v0.y, v0.z, v0.w);
-    tempMat[1] = glm::vec3(v1.y, v1.z, v1.w);
-    tempMat[2] = glm::vec3(v2.y, v2.z, v2.w);
+    tempMat[0] = vec3(v0.y, v0.z, v0.w);
+    tempMat[1] = vec3(v1.y, v1.z, v1.w);
+    tempMat[2] = vec3(v2.y, v2.z, v2.w);
     crossVec.x = glm::determinant(tempMat);
-    printMat(tempMat, 3, 3);
-    tempMat[0] = glm::vec3(v0.x, v0.z, v0.w);
-    tempMat[1] = glm::vec3(v1.x, v1.z, v1.w);
-    tempMat[2] = glm::vec3(v2.x, v2.z, v2.w);
+    tempMat[0] = vec3(v0.x, v0.z, v0.w);
+    tempMat[1] = vec3(v1.x, v1.z, v1.w);
+    tempMat[2] = vec3(v2.x, v2.z, v2.w);
     crossVec.y = -glm::determinant(tempMat);
-    printMat(tempMat, 3, 3);
-    tempMat[0] = glm::vec3(v0.x, v0.y, v0.w);
-    tempMat[1] = glm::vec3(v1.x, v1.y, v1.w);
-    tempMat[2] = glm::vec3(v2.x, v2.y, v2.w);
+    tempMat[0] = vec3(v0.x, v0.y, v0.w);
+    tempMat[1] = vec3(v1.x, v1.y, v1.w);
+    tempMat[2] = vec3(v2.x, v2.y, v2.w);
     crossVec.z = glm::determinant(tempMat);
-    printMat(tempMat, 3, 3);
-    tempMat[0] = glm::vec3(v0.x, v0.y, v0.z);
-    tempMat[1] = glm::vec3(v1.x, v1.y, v1.z);
-    tempMat[2] = glm::vec3(v2.x, v2.y, v2.z);
+    tempMat[0] = vec3(v0.x, v0.y, v0.z);
+    tempMat[1] = vec3(v1.x, v1.y, v1.z);
+    tempMat[2] = vec3(v2.x, v2.y, v2.z);
     crossVec.w = -glm::determinant(tempMat);
-    printMat(tempMat, 3, 3);
-    printVec(crossVec, 4);
     assert(glm::length(crossVec) >= 0.001);
     return crossVec;
-}
-
-glm::mat4x3 proj4D()
-{
-    // Infinite draw distance for now
-    // Also draws things behind, not ideal
-    glm::mat4x3 retMat(1);
-    return retMat;
-}
-
-template <class T> 
-void printMat(const T &m, int col, int row)
-{
-    std::cout << "-----------" << std::endl;
-    for (int rw = 0; rw < row; rw++) {
-        std::cout << "|";
-        for (int cl = 0; cl < col; cl++)
-            std::cout << " " << m[cl][rw];
-        std::cout << " |" << std::endl;
-    }
-    std::cout << "-----------" << std::endl;
-}
-
-template <class T>
-void printVec(const T &v, int col)
-{
-    std::cout << "Vec:  ";
-    for (int i = 0; i < col; i++)
-        std::cout << v[i] << " ";
-    std::cout << std::endl;
 }
 
 // Is called whenever a key is pressed/released via GLFW
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
                   int mode)
 {
-    std::cout << key << std::endl;
+    cout << key << endl;
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
 }
