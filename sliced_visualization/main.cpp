@@ -118,7 +118,10 @@ int main()
     // ---------- BEGIN OPENGL ----------- //
     
     // Shader creation
-    Shader edgeShader("vertex_shader.glsl", "fragment_shader.glsl");
+    Shader edgeShader;
+    edgeShader.addVert("vertex_shader.glsl");
+    edgeShader.addFrag("fragment_shader.glsl");
+    edgeShader.link();
 
     // Data
     GLfloat vertices[] = {
@@ -315,8 +318,7 @@ int main()
                                        (float)WIDTH/(float)HEIGHT,
                                        0.1f, 100.0f);
         // Shader Uniforms
-        
-        edgeShader.Use();
+        edgeShader.use();
 
         GLint viewLoc = glGetUniformLocation(edgeShader.Program,
                                              "view3D");
@@ -474,5 +476,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action,
 {
     cout << key << endl;
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GL_TRUE);
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
 }

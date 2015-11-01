@@ -26,10 +26,13 @@ endif
 	
 all: build run
 
-build: main.o
+build: main.o shader.o
 	$(LD) $^ -o $(OUTFILE) -L$(OGL_LIBRARY_PATH) $(LDFLAGS) -Wl,-rpath $(OGL_LIBRARY_PATH) $(OGL_STATIC_LIBS) $(OGL_DYNAMIC_LIBS) $(OGL_EXTRA_LIBS)
 
-main.o: main.cpp shader.h
+main.o: main.cpp
+	$(CXX) $(CXXFLAGS) $(WARNINGS) -I$(OGL_INCLUDE_PATH) $<
+
+shader.o: shader.cpp shader.h
 	$(CXX) $(CXXFLAGS) $(WARNINGS) -I$(OGL_INCLUDE_PATH) $<
 
 .PHONY: run clean

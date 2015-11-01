@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <string>
 
 #ifdef CLANG_COMPLETE_ONLY
     #define GL_GLEXT_PROTOTYPES
@@ -21,83 +22,21 @@
     #include <GL/glew.h>
 #endif
 
-// A pretty ugly class. Probably best to rewrite for actual use
 class Shader
 {
     public:
         GLuint Program;
-        Shader(const GLchar* vertexPath, const GLchar* fragmentPath)
-        {
-            std::string vertexCode;
-            std::string fragmentCode;
-            std::ifstream vShaderFile;
-            std::ifstream fShaderFile;
-            vShaderFile.exceptions (std::ifstream::badbit);
-            fShaderFile.exceptions (std::ifstream::badbit);
-            try {
-                vShaderFile.open(vertexPath);
-                fShaderFile.open(fragmentPath);
-                std::stringstream vShaderStream, fShaderStream;
-                vShaderStream << vShaderFile.rdbuf();
-                fShaderStream << fShaderFile.rdbuf();
-                vShaderFile.close();
-                fShaderFile.close();
-                vertexCode = vShaderStream.str();
-                fragmentCode = fShaderStream.str();
-            } catch (std::ifstream::failure e) {
-                std::cout << "Error: Shader: File not successfully read"
-                          << std::endl;
-            }
-
-            const GLchar* vShaderCode = vertexCode.c_str();
-            const GLchar* fShaderCode = fragmentCode.c_str();
-
-            GLuint vertex, fragment;
-            GLint success;
-            GLchar infoLog[512];
-
-            vertex = glCreateShader(GL_VERTEX_SHADER);
-            glShaderSource(vertex, 1, &vShaderCode, NULL);
-            glCompileShader(vertex);
-
-            glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
-            if (!success) {
-                glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-                std::cout << "Error: Vertex Shader: Compilation failed\n"
-                          << infoLog << std::endl;
-            }
-
-            fragment = glCreateShader(GL_FRAGMENT_SHADER);
-            glShaderSource(fragment, 1, &fShaderCode, NULL);
-            glCompileShader(fragment);
-
-            glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
-            if (!success) {
-                glGetShaderInfoLog(fragment, 512, NULL, infoLog);
-                std::cout << "Error: Fragment Shader: Compilation failed\n"
-                          << infoLog << std::endl;
-            }
-
-            Program = glCreateProgram();
-            glAttachShader(Program, vertex);
-            glAttachShader(Program, fragment);
-            glLinkProgram(Program);
-
-            glGetProgramiv(Program, GL_LINK_STATUS, &success);
-            if (!success) {
-                glGetProgramInfoLog(Program, 512, NULL, infoLog);
-                std::cout << "Error: Shader: Linking failed\n"
-                          << infoLog << std::endl;
-            }
-
-            glDeleteShader(vertex);
-            glDeleteShader(fragment);
-        }
-
-        void Use()
-        {
-            glUseProgram(Program);
-        }
+        Shader();
+        Shader(const GLchar *vertexPath, const GLchar *fragmentPath);
+        ~Shader();
+        void addFrag(const GLchar *fragmentPath);
+        void addVert(const GLchar *vertexPath);
+        void link();
+        void use();
+        void test() {};
+    private:
+        std::string fragmentPath;
+        std::string vertexPath;
 };
 
 #endif
