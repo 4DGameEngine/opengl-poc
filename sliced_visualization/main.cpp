@@ -1,5 +1,7 @@
 #include <iostream>
 #include <vector>
+#include <set>
+#include <map>
 #include <utility>
 #include <cassert>
 #include <cmath>
@@ -7,12 +9,12 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_access.hpp>
 #include <glm/ext.hpp>
 
 #include "shader.h"
+#include "cvec3.h"
+#include "utils4D.h"
 
-// GLEW
 // A little bit of hacking here to get my autocomplete to work
 #ifdef CLANG_COMPLETE_ONLY
     #define GL_GLEXT_PROTOTYPES
@@ -29,46 +31,33 @@
     #include <GL/glew.h>
 #endif
 
-// GLFW
 #include <GLFW/glfw3.h>
-
-// SOIL2
 #include <SOIL2.h>
 
 using std::vector;
 using std::cout;
 using std::endl;
 using std::pair;
+using std::tuple;
+using std::set;
+using std::map;
 using glm::vec4;
 using glm::vec3;
 using glm::mat4;
 using glm::to_string;
+using namespace utils4D;
+
+// Consts
+const GLuint WIDTH = 800, HEIGHT = 600;
 
 // Function prototypes
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
                   int mode);
-mat4 lookAt4D(const vec4 &from, const vec4 &to, 
-              const vec4 &up, const vec4 &over);
-vec4 cross4D(const vec4 &v0, const vec4 &v1,
-             const vec4 &v2);
-vector<pair<vec3, vec3> > *takeSlice(const GLfloat vertices[], int numVertices, 
-                                     const GLuint indices[], int numTriangles, 
-                                     GLfloat w);
-void populateVector(vector<vec4> &verticesVector, const GLfloat vertices[],
-                    int numVertices, int dimensions);
-vec4 intersectLine(const vec4 &start, const vec4 &end, int w, bool &success);
 
-// Window dimensions
-const GLuint WIDTH = 800, HEIGHT = 600;
-
-// The MAIN function, from here we start the application and run the 
-// game loop
 int main()
 {
     cout << "Starting GLFW context, OpenGL 3.3" << endl;
-    // Init GLFW
     glfwInit();
-    // Set all the required options for GLFW
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     // OS X requests 3.3 differently.
@@ -78,7 +67,6 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-    // Create a GLFWwindow object that we can use for GLFW's functions
     GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", 
                                           nullptr, nullptr);    
     if (window == nullptr)
@@ -88,15 +76,11 @@ int main()
         return -1;
     }
     glfwMakeContextCurrent(window);
-    // Set the required callback functions
     glfwSetKeyCallback(window, key_callback);
 
-    // Set this to true so GLEW knows to use a modern approach to retrieving
-    // function pointers and extensions
     // More hacking for my autocomplete.
 #ifndef CLANG_COMPLETE_ONLY
     glewExperimental = GL_TRUE;
-    // Initialize GLEW to setup the OpenGL Function pointers
     if (glewInit() != GLEW_OK)
     {
         cout << "Failed to initialize GLEW" << endl;
@@ -254,12 +238,14 @@ int main()
          9,  0,  8,
     };
 
-    vector<pair<vec3, vec3> > *slice = takeSlice(vertices, 16, indices, 
-                                                 8*12, 0.0f);
-    for (auto &pair : *slice) {
-        cout << to_string(pair.first) << " " << to_string(pair.second) << endl;
+    auto *slice = takeSlice(vertices, 16, indices, 8*12, 0.0f);
+    for (auto &kv : *slice) {
+        cout << to_string(kv.first) <<  ": ";
+        for (auto &vec : kv.second) {
+            cout << to_string(vec) <<  ", ";
+        }
+        cout << endl;
     }
-    cout << slice->size() << endl;
     delete slice;
 
     // Textures
@@ -270,11 +256,8 @@ int main()
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
     
-    // Game loop
     while (!glfwWindowShouldClose(window))
     {
-        // Check if any events have been activated (key pressed, mouse moved
-        // etc.) and call corresponding response functions
         glfwPollEvents();
 
         // Setup stuff
@@ -360,117 +343,6 @@ int main()
     return 0;
 }
 
-vector<pair<vec3, vec3> > *takeSlice(const GLfloat vertices[], int numVertices,
-                                     const GLuint indices[], int numTriangles,
-                                     GLfloat w)
-{
-    vector<pair<vec3, vec3> > *intersects = new vector<pair<vec3, vec3> >;
-    vector<vec4> verticesVector;
-    populateVector(verticesVector, vertices, numVertices, 4);
-
-    for (int i = 0; i < numTriangles; i++) {
-        // Todo: Orientation?
-        vec4 point0 = verticesVector[indices[3*i]];
-        vec4 point1 = verticesVector[indices[3*i+1]];
-        vec4 point2 = verticesVector[indices[3*i+2]];
-
-        bool flag0, flag1, flag2;
-        vec3 intersect0(intersectLine(point0, point1, w, flag0)), 
-             intersect1(intersectLine(point1, point2, w, flag1)),
-             intersect2(intersectLine(point2, point0, w, flag2));
-        pair<vec3, vec3> line0(intersect0, intersect1),
-                         line1(intersect1, intersect2),
-                         line2(intersect2, intersect0);
-
-        if (flag0 && flag1) intersects->push_back(line0);
-        if (flag1 && flag2) intersects->push_back(line1);
-        if (flag2 && flag0) intersects->push_back(line2);
-        if (flag0 && !flag1 && !flag2)
-            intersects->push_back(pair<vec3, vec3>(intersect0, intersect0));
-        if (!flag0 && flag1 && !flag2)
-            intersects->push_back(pair<vec3, vec3>(intersect1, intersect1));
-        if (!flag0 && !flag1 && flag2)
-            intersects->push_back(pair<vec3, vec3>(intersect2, intersect2));
-    }
-
-    return intersects;
-}
-
-void populateVector(vector<vec4> &verticesVector, const GLfloat vertices[],
-                    int numVertices, int dimensions)
-{
-    for (int i = 0; i < numVertices; i++) {
-        verticesVector.push_back(vec4(vertices[dimensions*i],
-                                      vertices[dimensions*i+1],
-                                      vertices[dimensions*i+2],
-                                      vertices[dimensions*i+3]));
-    }
-}
-
-vec4 intersectLine(const vec4 &start, const vec4 &end, int w, bool &success)
-{
-    // Don't know if this should be more robust
-    if (fabs(end.w - start.w) < 0.01f) {
-        if (fabs(w - start.w) < 0.01f) {
-            success = true;
-            return start;
-        } else {
-            success = false;
-            return vec4();
-        }
-    }
-
-    GLfloat ratio = (w - start.w)/(end.w - start.w);
-    if (ratio < -0.01f || ratio > 1.01f) {
-        success = false;
-        return vec4();
-    } else {
-        success = true;
-        return start + ratio * (end - start);
-    }
-}
-
-mat4 lookAt4D(const vec4 &from, const vec4 &to, const vec4 &up, 
-              const vec4 &over)
-{
-    mat4 viewMat;
-    vec4 A, B, C, D;
-    D = glm::normalize(from - to);
-    A = glm::normalize(cross4D(up, over, D));
-    B = glm::normalize(cross4D(over, D, A));
-    C = cross4D(D, A, B);
-    viewMat[0] = A;
-    viewMat[1] = B;
-    viewMat[2] = C;
-    viewMat[3] = D;
-    return glm::transpose(viewMat);
-}
-
-vec4 cross4D(const vec4 &v0, const vec4 &v1, const vec4 &v2)
-{
-    vec4 crossVec;
-    glm::mat3 tempMat;
-    tempMat[0] = vec3(v0.y, v0.z, v0.w);
-    tempMat[1] = vec3(v1.y, v1.z, v1.w);
-    tempMat[2] = vec3(v2.y, v2.z, v2.w);
-    crossVec.x = glm::determinant(tempMat);
-    tempMat[0] = vec3(v0.x, v0.z, v0.w);
-    tempMat[1] = vec3(v1.x, v1.z, v1.w);
-    tempMat[2] = vec3(v2.x, v2.z, v2.w);
-    crossVec.y = -glm::determinant(tempMat);
-    tempMat[0] = vec3(v0.x, v0.y, v0.w);
-    tempMat[1] = vec3(v1.x, v1.y, v1.w);
-    tempMat[2] = vec3(v2.x, v2.y, v2.w);
-    crossVec.z = glm::determinant(tempMat);
-    tempMat[0] = vec3(v0.x, v0.y, v0.z);
-    tempMat[1] = vec3(v1.x, v1.y, v1.z);
-    tempMat[2] = vec3(v2.x, v2.y, v2.z);
-    crossVec.w = -glm::determinant(tempMat);
-    assert(glm::length(crossVec) >= 0.001);
-    return crossVec;
-}
-
-// Is called whenever a key is pressed/released via GLFW
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
                   int mode)
 {

@@ -26,13 +26,16 @@ endif
 	
 all: build run
 
-build: main.o shader.o
+build: main.o shader.o utils4D.o
 	$(LD) $^ -o $(OUTFILE) -L$(OGL_LIBRARY_PATH) $(LDFLAGS) -Wl,-rpath $(OGL_LIBRARY_PATH) $(OGL_STATIC_LIBS) $(OGL_DYNAMIC_LIBS) $(OGL_EXTRA_LIBS)
 
-main.o: main.cpp
+main.o: main.cpp cvec3.h
 	$(CXX) $(CXXFLAGS) $(WARNINGS) -I$(OGL_INCLUDE_PATH) $<
 
 shader.o: shader.cpp shader.h
+	$(CXX) $(CXXFLAGS) $(WARNINGS) -I$(OGL_INCLUDE_PATH) $<
+
+utils4D.o: utils4D.cpp utils4D.h cvec3.h
 	$(CXX) $(CXXFLAGS) $(WARNINGS) -I$(OGL_INCLUDE_PATH) $<
 
 .PHONY: run clean
