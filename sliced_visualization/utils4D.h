@@ -2,15 +2,14 @@
 #define _UTILS4D_H_
 
 #include <vector>
-#include <map>
-#include <set>
+
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/ext.hpp>
 
 #include <GLFW/glfw3.h>
-
-#include "cvec3.h"
 
 /* utils4D.h
  *
@@ -22,8 +21,7 @@ namespace utils4D
     using glm::vec3;
     using glm::vec4;
     using std::vector;
-    using std::map;
-    using std::set;
+    using Point_3 = CGAL::Exact_predicates_inexact_constructions_kernel::Point_3;
 
     const GLfloat FLOAT_TOLERANCE = 0.001f;
 
@@ -31,15 +29,11 @@ namespace utils4D
                   const vec4 &over);
     vec4 cross4D(const vec4 &v0, const vec4 &v1, const vec4 &v2);
 
-    map<cvec3, set<cvec3> > *takeSlice(const GLfloat vertices[], 
-                                       int numVertices, 
-                                       const GLuint indices[], 
-                                       int numTriangles,  
-                                       GLfloat w);
+    void rawSlice(vector<vec4> vertices, const GLuint indices[], int numTriangles,
+                  GLfloat w, vector<Point_3> &intersects);
+    void getHull(const vector<Point_3> &raw, vector<GLfloat> &buf);
 
-    void populateVector(vector<vec4> &verticesVector, const GLfloat vertices[],
-                        int numVertices, int dimensions);
-    vec4 intersectLine(const vec4 &start, const vec4 &end, int w, 
+    vec4 intersectLine(const vec4 &start, const vec4 &end, const GLfloat w,
                        bool &success);
 }
 

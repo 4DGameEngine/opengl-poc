@@ -16,11 +16,11 @@ OUTFILE=sliced
 
 UNAME_S=$(shell uname -s)
 ifeq ($(UNAME_S),Linux)
-	OGL_EXTRA_LIBS=-lGL -lX11 -lpthread -lXrandr -lXi
+	OGL_EXTRA_LIBS=-lGL -lX11 -lpthread -lXrandr -lXi -lCGAL -lCGAL_Core -lgmp
 	CXXFLAGS+=-D__LINUXOS__
 endif
 ifeq ($(UNAME_S),Darwin)
-	OGL_EXTRA_LIBS=-framework OpenGL
+	OGL_EXTRA_LIBS=-framework OpenGL -lCGAL -lCGAL_Core -lgmp
 	CXXFLAGS+=-D__APPLEOS__
 endif
 	
@@ -29,13 +29,13 @@ all: build run
 build: main.o shader.o utils4D.o
 	$(LD) $^ -o $(OUTFILE) -L$(OGL_LIBRARY_PATH) $(LDFLAGS) -Wl,-rpath $(OGL_LIBRARY_PATH) $(OGL_STATIC_LIBS) $(OGL_DYNAMIC_LIBS) $(OGL_EXTRA_LIBS)
 
-main.o: main.cpp cvec3.h
+main.o: main.cpp
 	$(CXX) $(CXXFLAGS) $(WARNINGS) -I$(OGL_INCLUDE_PATH) $<
 
 shader.o: shader.cpp shader.h
 	$(CXX) $(CXXFLAGS) $(WARNINGS) -I$(OGL_INCLUDE_PATH) $<
 
-utils4D.o: utils4D.cpp utils4D.h cvec3.h
+utils4D.o: utils4D.cpp utils4D.h
 	$(CXX) $(CXXFLAGS) $(WARNINGS) -I$(OGL_INCLUDE_PATH) $<
 
 .PHONY: run clean

@@ -1,8 +1,6 @@
 #include <iostream>
 #include <vector>
-#include <set>
-#include <map>
-#include <utility>
+
 #include <cassert>
 #include <cmath>
 
@@ -11,8 +9,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/ext.hpp>
 
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+
 #include "shader.h"
-#include "cvec3.h"
 #include "utils4D.h"
 
 // A little bit of hacking here to get my autocomplete to work
@@ -37,15 +36,11 @@
 using std::vector;
 using std::cout;
 using std::endl;
-using std::pair;
-using std::tuple;
-using std::set;
-using std::map;
 using glm::vec4;
 using glm::vec3;
 using glm::mat4;
 using glm::to_string;
-using namespace utils4D;
+using Point_3 = CGAL::Exact_predicates_inexact_constructions_kernel::Point_3;
 
 // Consts
 const GLuint WIDTH = 800, HEIGHT = 600;
@@ -101,12 +96,6 @@ int main()
 
     // ---------- BEGIN OPENGL ----------- //
     
-    // Shader creation
-    Shader edgeShader;
-    edgeShader.addVert("vertex_shader.glsl");
-    edgeShader.addFrag("fragment_shader.glsl");
-    edgeShader.link();
-
     // Data
     GLfloat vertices[] = {
         // Positions           
@@ -132,129 +121,82 @@ int main()
     };
 
     GLuint indices[] = {
-        // Near Cube
-         0,  2,  1,
-         0,  3,  2,
-         7,  5,  6,
-         7,  4,  5,
-         3,  4,  7,
-         3,  0,  4,
-         6,  1,  2,
-         6,  5,  1,
-         6,  3,  7,
-         6,  2,  3,
-         1,  4,  0,
-         1,  5,  4,
-        // Far Cube
-         8, 10,  9,
-         8, 11, 10,
-        15, 13, 14,
-        15, 12, 13,
-        11, 12, 15,
-        11,  8, 12,
-        14,  9, 10,
-        14, 13,  9,
-        14, 11, 15,
-        14, 10, 11,
-         9, 12,  8,
-         9, 13, 12,
-        // Front Cube
-         0,  2,  1,
-         0,  3,  2,
-        11,  9, 10,
-        11,  8,  9,
-         3,  0,  8,
-         3,  8, 11,
-        10,  1,  2,
-        10,  9,  1,
-        10,  3, 11,
-        10,  2,  3,
+         0,  1,  2,
+         0,  2,  3,
+         0,  5,  1,
+         0,  4,  5,
+         0,  3,  7,
+         0,  7,  4,
+
+         6,  1,  5,
+         6,  2,  1,
+         6,  3,  2,
+         6,  7,  3,
+         6,  5,  4,
+         6,  7,  4,
+
+         9, 10, 11,
+         9, 11,  8,
+         9,  8, 12,
+         9, 12, 13,
+         9, 14, 10,
+         9, 13, 14,
+
+        15, 12,  8,
+        15,  8, 11,
+        15, 14, 13,
+        15, 13, 12,
+        15, 10, 14,
+        15, 11, 10,
+
+         3,  8,  0,
+         3, 11,  8,
+         3, 11, 10,
+         3, 10,  2,
+         3, 15, 11,
+         3,  7, 15,
+         
+        14,  6,  2,
+        14,  2, 10,
+        14,  5,  6,
+        14, 13,  5,
+        14,  7,  6,
+        14, 15,  7,
+
          1,  8,  0,
          1,  9,  8,
-        // Back Cube
-         5,  7,  4,
-         5,  6,  7,
-        14, 12, 15,
-        14, 13, 12,
-         6,  5, 13,
-         6, 13, 14,
-        15,  4,  7,
-        15, 12,  4,
-        15,  6, 14,
-        15,  7,  6,
-         4, 13,  5,
-         4, 12, 13,
-        // Top Cube
-         4,  7,  3,
-         4,  3,  0,
-        15,  8, 11,
-        15, 12,  8,
-         7, 12, 15,
-         7,  4, 12,
-         0, 11,  8,
-         0,  3, 11,
-         3,  7, 15,
-         3, 15, 11,
-         4,  0,  8,
-         4,  8, 12,
-        // Bottom Cube
-         1,  2,  6,
-         1,  6,  5,
-        10, 13, 14,
-        10,  9, 13,
-         2,  9, 10,
-         2,  1,  9,
-         5, 14, 13,
-         5,  6, 14,
-         6,  2, 10,
-         6, 10, 14,
          1,  5, 13,
          1, 13,  9,
-        // Left Cube
-         3,  7,  6,
-         3,  6,  2,
-        15, 11, 10,
-        15, 10, 14,
-        11, 15,  7,
-        11,  7,  3,
-        14,  2,  6,
-        14, 10,  2,
-         7, 15, 14,
-         7, 14,  6,
-        11,  3,  2,
-        11,  2, 10,
-        // Right Cube
-         1,  5,  4,
-         1,  4,  0,
-        13,  9,  8,
-        13,  8, 12,
-         9, 13,  5,
-         9,  5,  1,
-        12,  0,  4,
-        12,  8,  0,
-         5, 13, 12,
-         5, 12,  4,
-         9,  1,  0,
-         9,  0,  8,
+         1,  2, 10,
+         1, 10,  9,
+
+        12,  4,  0,
+        12,  0,  8,
+        12,  4,  5,
+        12,  5, 13,
+        12,  7,  4,
+        12, 15,  7,
     };
 
-    auto *slice = takeSlice(vertices, 16, indices, 8*12, 0.0f);
-    for (auto &kv : *slice) {
-        cout << to_string(kv.first) <<  ": ";
-        for (auto &vec : kv.second) {
-            cout << to_string(vec) <<  ", ";
-        }
-        cout << endl;
+    // Pack data into vector
+    vector<vec4> hypercube;
+    for (int i = 0; i != 16; i++) {
+        hypercube.push_back(vec4(vertices[i*4], vertices[i*4+1],
+                                 vertices[i*4+2], vertices[i*4+3]));
     }
-    delete slice;
+
+    // Shader creation
+    Shader edgeShader;
+    edgeShader.addVert("vertex_shader.glsl");
+    edgeShader.addFrag("fragment_shader.glsl");
+    edgeShader.link();
 
     // Textures
 
     // Set up buffer stuff
-    GLuint VAO, VBO, EBO;
+    GLuint VAO, VBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
     
     while (!glfwWindowShouldClose(window))
     {
@@ -262,6 +204,7 @@ int main()
 
         // Setup stuff
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
@@ -269,28 +212,36 @@ int main()
 
         // 4D-3D Transformations
         mat4 model4D(1.0f), view4D;
-        /*GLfloat theta = glm::radians((GLfloat)glfwGetTime() * 50.0f);
+        GLfloat theta = glm::radians((GLfloat)glfwGetTime() * 50.0f);
         GLfloat cs = cos(theta), sn = sin(theta);
         model4D[0][0] = cs;
         model4D[0][3] = -sn;
         model4D[3][0] = sn;
-        model4D[3][3] = cs;*/
+        model4D[3][3] = cs;
         vec4 from(0.0f, 0.0f, 0.0f, 4.0f), to(0.0f, 0.0f, 0.0f, 0.0f); 
         vec4 up(0.0f, 1.0f, 0.0f, 0.0f), over(0.0f, 0.0f, 1.0f, 0.0f);
-        view4D = lookAt4D(from, to, up, over);
-        
+        view4D = utils4D::lookAt4D(from, to, up, over);
 
-        /*
-        GLfloat *projVert = new GLfloat[16*7];
-        cout << "--------------------------------" << endl;
+        // Transform each vertex
+        vector<vec4> transformedCube;
         for(int i = 0; i != 16; i++) {
-            // Project each vertex to the 3D space
-            vec4 vert4(vertices[i*4], vertices[i*4+1], vertices[i*4+2],
-                       vertices[i*4+3]);
-            vec4 viewVert = view4D * (model4D * vert4 - from); 
+            vec4 transformedVert = view4D * (model4D * hypercube[i] - from); 
+            transformedCube.push_back(std::move(transformedVert));
+        }
 
-            printVec(viewVert, 4);
+        // Get slice
+        vector<Point_3> raw;
+        utils4D::rawSlice(transformedCube, indices, 48, -4.0f, raw);
 
+        vector<GLfloat> sliced;
+        utils4D::getHull(raw, sliced);
+
+        cout << "---------------------------------------------" << endl;
+        for (auto it = sliced.begin(); it != sliced.end(); ) {
+            cout << "Face: ";
+            cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ") ";
+            cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ") ";
+            cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ")" << endl;
         }
 
         // 3D-2D Transformations
@@ -300,7 +251,17 @@ int main()
         mat4 proj3D = glm::perspective(glm::radians(45.0f), 
                                        (float)WIDTH/(float)HEIGHT,
                                        0.1f, 100.0f);
-        // Shader Uniforms
+        // Load Vertices
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sliced.size() * sizeof(GL_FLOAT),
+                     &sliced[0], GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GL_FLOAT), 
+                              (GLvoid*)0);
+        glEnableVertexAttribArray(0);
+        glBindVertexArray(0);
+
+        // Set shader uniforms and use shader
         edgeShader.use();
 
         GLint viewLoc = glGetUniformLocation(edgeShader.Program,
@@ -310,36 +271,21 @@ int main()
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view3D));
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(proj3D));
 
-        // Load Vertices
+        // Draw
         glBindVertexArray(VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, 16*7*sizeof(GL_FLOAT), projVert,
-                     GL_DYNAMIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, 
-                     GL_DYNAMIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7*sizeof(GL_FLOAT), 
-                              (GLvoid*)0);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7*sizeof(GL_FLOAT), 
-                              (GLvoid*)(3*sizeof(GL_FLOAT)));
-        glEnableVertexAttribArray(1);
-
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glDrawElements(GL_TRIANGLES, 8*12*3, GL_UNSIGNED_INT, 0);
+        glDrawArrays(GL_TRIANGLES, 0, sliced.size());
         glBindVertexArray(0);
 
         // Swap the screen buffers*/
         glfwSwapBuffers(window);
 
-        //delete[] projVert;
+        sleep(1);
     }
 
-    // Terminate GLFW, clearing any resources allocated by GLFW.
+    // Terminate GLFW and cleanup
     glfwTerminate();
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
     return 0;
 }
 

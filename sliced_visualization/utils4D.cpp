@@ -1,7 +1,20 @@
+#include <iostream>
+#include <utility>
+
+#include <cmath>
+#include <cassert>
+
+// CGAL headers are a bit picky about which order you include them in
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/point_generators_3.h>
+#include <CGAL/algorithm.h>
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/convex_hull_3.h>
+
 #include "utils4D.h"
 
 glm::mat4 utils4D::lookAt4D(const vec4 &from, const vec4 &to, const vec4 &up, 
-              const vec4 &over)
+                           const vec4 &over)
 {
     mat4 viewMat;
     vec4 A, B, C, D;
@@ -40,65 +53,64 @@ glm::vec4 utils4D::cross4D(const vec4 &v0, const vec4 &v1, const vec4 &v2)
     return crossVec;
 }
 
-std::map<cvec3, std::set<cvec3> > *utils4D::takeSlice(const GLfloat vertices[], 
-                                                      int numVertices,
-                                                      const GLuint indices[], 
-                                                      int numTriangles,
-                                                      GLfloat w)
+void utils4D::rawSlice(vector<vec4> vertices, const GLuint indices[], int numTriangles,
+                       GLfloat w, vector<Point_3> &intersects)
 {
-    // Switch to unordered maps and sets eventually?
-    map<cvec3, set<cvec3> > *intersects = new map<cvec3, set<cvec3> >;
-    vector<vec4> verticesVector;
-    populateVector(verticesVector, vertices, numVertices, 4);
-
+    // Calculate intersections with each triangle
     for (int i = 0; i < numTriangles; i++) {
-        // Orientation is irrelevant here, we orient the slice according to
-        // what is most 'natural' in 3d.
-        vec4 point0 = verticesVector[indices[3*i]];
-        vec4 point1 = verticesVector[indices[3*i+1]];
-        vec4 point2 = verticesVector[indices[3*i+2]];
+        vec4 point0 = vertices[indices[3*i]];
+        vec4 point1 = vertices[indices[3*i+1]];
+        vec4 point2 = vertices[indices[3*i+2]];
 
         bool flag0, flag1, flag2;
-        cvec3 intersect0(intersectLine(point0, point1, w, flag0));
-        cvec3 intersect1(intersectLine(point1, point2, w, flag1));
-        cvec3 intersect2(intersectLine(point2, point0, w, flag2));
+        vec3 int0(intersectLine(point0, point1, w, flag0));
+        vec3 int1(intersectLine(point1, point2, w, flag1));
+        vec3 int2(intersectLine(point2, point0, w, flag2));
 
-        if (flag0 && flag1) {
-            (*intersects)[intersect0].insert(intersect1);
-            (*intersects)[intersect1].insert(intersect0);
-        }
-        if (flag1 && flag2) {
-            (*intersects)[intersect1].insert(intersect2);
-            (*intersects)[intersect2].insert(intersect1);
-        }
-        if (flag2 && flag0) {
-            (*intersects)[intersect2].insert(intersect0);
-            (*intersects)[intersect0].insert(intersect2);
-        }
+        if (flag0)
+            intersects.push_back(Point_3(int0.x, int0.y, int0.z));
+        if (flag1)
+            intersects.push_back(Point_3(int1.x, int1.y, int1.z));
+        if (flag2)
+            intersects.push_back(Point_3(int2.x, int2.y, int2.z));
     }
-
-    return intersects;
 }
 
-void utils4D::populateVector(vector<vec4> &verticesVector, 
-                             const GLfloat vertices[],
-                             int numVertices, int dimensions)
+void utils4D::getHull(const vector<Point_3> &raw, vector<GLfloat> &buf)
 {
-    for (int i = 0; i < numVertices; i++) {
-        verticesVector.push_back(vec4(vertices[dimensions*i],
-                                      vertices[dimensions*i+1],
-                                      vertices[dimensions*i+2],
-                                      vertices[dimensions*i+3]));
+    using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
+    using Polyhedron = CGAL::Polyhedron_3<Kernel>;
+
+    // Return if no hull possible
+    if (raw.size() < 3) return;
+
+    // Get convex hull
+    Polyhedron poly;
+    CGAL::convex_hull_3(raw.begin(), raw.end(), poly);
+
+    // Circulate around each facet to retrieve coordinates
+    for (auto fit = poly.facets_begin(); fit != poly.facets_end(); fit++) {
+        auto hit = fit->facet_begin(), orig = hit;
+        CGAL_assertion(CGAL::circulator_size(hit) >= 3);
+        
+        do {
+            auto &curr = hit->vertex()->point();
+            buf.push_back(curr.x());
+            buf.push_back(curr.y());
+            buf.push_back(curr.z());
+            hit++;
+        } while (hit != orig);
     }
 }
 
 // Might want to change this to exact match for now?
-glm::vec4 utils4D::intersectLine(const vec4 &start, const vec4 &end, int w, 
-                                 bool &success)
+glm::vec4 utils4D::intersectLine(const vec4 &start, const vec4 &end, 
+                                 const GLfloat w, bool &success)
 {
     // Don't know if this should be more robust
-    if (fabs(end.w - start.w) < FLOAT_TOLERANCE) {
-        if (fabs(w - start.w) < FLOAT_TOLERANCE) {
+    // fabsf should be right?
+    if (end.w == start.w) {
+        if (w == start.w) {
             success = true;
             return start;
         } else {
@@ -108,11 +120,14 @@ glm::vec4 utils4D::intersectLine(const vec4 &start, const vec4 &end, int w,
     }
 
     GLfloat ratio = (w - start.w)/(end.w - start.w);
-    if (ratio < -FLOAT_TOLERANCE || ratio > 1 + FLOAT_TOLERANCE) {
+    //if (ratio < -FLOAT_TOLERANCE || ratio > 1.0f + FLOAT_TOLERANCE) {
+    if (ratio < 0 || ratio > 1.0f) {
         success = false;
         return vec4();
     } else {
         success = true;
+        if (ratio < 0.0f) ratio = 0.0f;
+        if (ratio > 1.0f) ratio = 1.0f;
         return start + ratio * (end - start);
     }
 }
