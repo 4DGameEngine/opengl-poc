@@ -225,7 +225,7 @@ int main()
         // Transform each vertex
         vector<vec4> transformedCube;
         for(int i = 0; i != 16; i++) {
-            vec4 transformedVert = view4D * (model4D * hypercube[i] - from); 
+            vec4 transformedVert = view4D * (hypercube[i] - from); 
             transformedCube.push_back(std::move(transformedVert));
         }
 
@@ -245,8 +245,8 @@ int main()
         }
 
         // 3D-2D Transformations
-        mat4 view3D = glm::lookAt(vec3(3.0f, 1.2f, 2.0f),
-                                  vec3(0.0f, 0.0f, 0.0f),
+        mat4 view3D = glm::lookAt(vec3(0.0f, 0.0f, 2.0f),
+                                  vec3(0.0f, 0.0f, 1.0f),
                                   vec3(0.0f, 1.0f, 0.0f));
         mat4 proj3D = glm::perspective(glm::radians(45.0f), 
                                        (float)WIDTH/(float)HEIGHT,
@@ -278,8 +278,6 @@ int main()
 
         // Swap the screen buffers*/
         glfwSwapBuffers(window);
-
-        sleep(1);
     }
 
     // Terminate GLFW and cleanup
