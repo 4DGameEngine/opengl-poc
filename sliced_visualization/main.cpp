@@ -177,14 +177,16 @@ int main()
         }
 
         // Get slice
-        vector<Point_3> raw;
-        utils4D::rawSlice(transformedCube, indices_hyperfrustrum, 48, w, raw);
+        vector<Point_3> raw_hyperfrustrum;
+        utils4D::rawSlice(transformedCube, indices_hyperfrustrum, 48, w,
+                          raw_hyperfrustrum);
 
-        vector<GLfloat> sliced;
-        utils4D::getHull(raw, sliced);
+        vector<GLfloat> sliced_hyperfrustrum;
+        utils4D::getHull(raw_hyperfrustrum, sliced_hyperfrustrum);
         
         cout << "---------------------------------------------" << endl;
-        for (auto it = sliced.begin(); it != sliced.end(); ) {
+        for (auto it = sliced_hyperfrustrum.begin(); 
+                  it != sliced_hyperfrustrum.end(); ) {
             cout << "Face: " << endl;
             cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ") ";
             cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ") " << endl;
@@ -202,8 +204,8 @@ int main()
         // Load Vertices
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sliced.size() * sizeof(GL_FLOAT),
-                     &sliced[0], GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sliced_hyperfrustrum.size() * sizeof(GL_FLOAT),
+                     &sliced_hyperfrustrum[0], GL_DYNAMIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GL_FLOAT), 
                               (GLvoid*)0);
         glEnableVertexAttribArray(0);
@@ -221,7 +223,7 @@ int main()
 
         // Draw
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, sliced.size()/6);
+        glDrawArrays(GL_TRIANGLES, 0, sliced_hyperfrustrum.size()/6);
         glBindVertexArray(0);
 
         // Swap the screen buffers*/
