@@ -114,97 +114,18 @@ int main()
 
     // ---------- BEGIN OPENGL ----------- //
     
-    // Data
-    GLfloat vertices[] = {
-        // Positions           
-         0.6f,   0.6f,   0.6f,   0.6f,
-         0.6f,  -0.6f,   0.6f,   0.6f,  
-        -0.6f,  -0.6f,   0.6f,   0.6f,
-        -0.6f,   0.6f,   0.6f,   0.6f,
-
-         0.6f,   0.6f,  -0.6f,   0.6f,
-         0.6f,  -0.6f,  -0.6f,   0.6f,
-        -0.6f,  -0.6f,  -0.6f,   0.6f,
-        -0.6f,   0.6f,  -0.6f,   0.6f,
-
-         0.6f,   0.6f,   0.6f,  -0.6f,
-         0.6f,  -0.6f,   0.6f,  -0.6f,  
-        -0.6f,  -0.6f,   0.6f,  -0.6f,
-        -0.6f,   0.6f,   0.6f,  -0.6f,
-
-         0.6f,   0.6f,  -0.6f,  -0.6f,
-         0.6f,  -0.6f,  -0.6f,  -0.6f,
-        -0.6f,  -0.6f,  -0.6f,  -0.6f,
-        -0.6f,   0.6f,  -0.6f,  -0.6f,
-    };
-
-    GLuint indices[] = {
-         0,  1,  2,
-         0,  2,  3,
-         0,  5,  1,
-         0,  4,  5,
-         0,  3,  7,
-         0,  7,  4,
-
-         6,  1,  5,
-         6,  2,  1,
-         6,  3,  2,
-         6,  7,  3,
-         6,  5,  4,
-         6,  7,  4,
-
-         9, 10, 11,
-         9, 11,  8,
-         9,  8, 12,
-         9, 12, 13,
-         9, 14, 10,
-         9, 13, 14,
-
-        15, 12,  8,
-        15,  8, 11,
-        15, 14, 13,
-        15, 13, 12,
-        15, 10, 14,
-        15, 11, 10,
-
-         3,  8,  0,
-         3, 11,  8,
-         3, 11, 10,
-         3, 10,  2,
-         3, 15, 11,
-         3,  7, 15,
-         
-        14,  6,  2,
-        14,  2, 10,
-        14,  5,  6,
-        14, 13,  5,
-        14,  7,  6,
-        14, 15,  7,
-
-         1,  8,  0,
-         1,  9,  8,
-         1,  5, 13,
-         1, 13,  9,
-         1,  2, 10,
-         1, 10,  9,
-
-        12,  4,  0,
-        12,  0,  8,
-        12,  4,  5,
-        12,  5, 13,
-        12,  7,  4,
-        12, 15,  7,
-    };
+    // Hax
+    #include "data.cpp"
 
     // Pack data into vector
     vector<vec4> hypercube;
     for (int i = 0; i != 16; i++) {
-        hypercube.push_back(vec4(vertices[i*4], vertices[i*4+1],
-                                 vertices[i*4+2], vertices[i*4+3]));
+        hypercube.push_back(vec4(vertices_hyperfrustrum[i*4], 
+                                 vertices_hyperfrustrum[i*4+1],
+                                 vertices_hyperfrustrum[i*4+2], 
+                                 vertices_hyperfrustrum[i*4+3]));
     }
     
-
-
     // Shader creation
     Shader edgeShader;
     edgeShader.addVert("vertex_shader.glsl");
@@ -251,23 +172,26 @@ int main()
         // Transform each vertex
         vector<vec4> transformedCube;
         for(int i = 0; i != 16; i++) {
-            vec4 transformedVert = view4D * (hypercube[i] - from); 
+            vec4 transformedVert = view4D * (model4D * hypercube[i]- from); 
             transformedCube.push_back(std::move(transformedVert));
         }
 
         // Get slice
         vector<Point_3> raw;
-        utils4D::rawSlice(transformedCube, indices, 48, w, raw);
+        utils4D::rawSlice(transformedCube, indices_hyperfrustrum, 48, w, raw);
 
         vector<GLfloat> sliced;
         utils4D::getHull(raw, sliced);
         
         cout << "---------------------------------------------" << endl;
         for (auto it = sliced.begin(); it != sliced.end(); ) {
-            cout << "Face: ";
+            cout << "Face: " << endl;
             cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ") ";
+            cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ") " << endl;
             cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ") ";
-            cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ")" << endl;
+            cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ") " << endl;
+            cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ") ";
+            cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ") " << endl;
         }
 
         // 3D-2D Transformations
@@ -280,7 +204,7 @@ int main()
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, sliced.size() * sizeof(GL_FLOAT),
                      &sliced[0], GL_DYNAMIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GL_FLOAT), 
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GL_FLOAT), 
                               (GLvoid*)0);
         glEnableVertexAttribArray(0);
         glBindVertexArray(0);
@@ -297,7 +221,7 @@ int main()
 
         // Draw
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, sliced.size()/3);
+        glDrawArrays(GL_TRIANGLES, 0, sliced.size()/6);
         glBindVertexArray(0);
 
         // Swap the screen buffers*/
@@ -310,6 +234,7 @@ int main()
     glDeleteBuffers(1, &VBO);
     return 0;
 }
+
 // Moves/alters the camera positions based on user input
 void do_movement()
 {

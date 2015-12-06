@@ -91,14 +91,35 @@ void utils4D::getHull(const vector<Point_3> &raw, vector<GLfloat> &buf)
     // Circulate around each facet to retrieve coordinates
     for (auto fit = poly.facets_begin(); fit != poly.facets_end(); fit++) {
         auto hit = fit->facet_begin(), orig = hit;
-        CGAL_assertion(CGAL::circulator_size(hit) >= 3);
+        CGAL_assertion(CGAL::circulator_size(hit) == 3);
         
         do {
-            auto &curr = hit->vertex()->point();
-            buf.push_back(curr.x());
-            buf.push_back(curr.y());
-            buf.push_back(curr.z());
-            hit++;
+            auto &v0 = (hit++)->vertex()->point(), 
+                 &v1 = (hit++)->vertex()->point(),
+                 &v2 = (hit++)->vertex()->point();
+
+            auto n = CGAL::cross_product(v1 - v0, v2 - v0);
+            
+            // Lol wat
+            buf.push_back(v0.x());
+            buf.push_back(v0.y());
+            buf.push_back(v0.z());
+            buf.push_back(n.x());
+            buf.push_back(n.y());
+            buf.push_back(n.z());
+            buf.push_back(v1.x());
+            buf.push_back(v1.y());
+            buf.push_back(v1.z());
+            buf.push_back(n.x());
+            buf.push_back(n.y());
+            buf.push_back(n.z());
+            buf.push_back(v2.x());
+            buf.push_back(v2.y());
+            buf.push_back(v2.z());
+            buf.push_back(n.x());
+            buf.push_back(n.y());
+            buf.push_back(n.z());
+
         } while (hit != orig);
     }
 }
