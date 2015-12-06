@@ -297,7 +297,7 @@ int main()
 
         // Draw
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, sliced.size());
+        glDrawArrays(GL_TRIANGLES, 0, sliced.size()/3);
         glBindVertexArray(0);
 
         // Swap the screen buffers*/
