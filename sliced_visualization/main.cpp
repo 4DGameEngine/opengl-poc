@@ -12,6 +12,7 @@
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 #include "shader.h"
+#include "camera.h"
 #include "utils4D.h"
 
 // A little bit of hacking here to get my autocomplete to work
@@ -46,8 +47,20 @@ using Point_3 = CGAL::Exact_predicates_inexact_constructions_kernel::Point_3;
 const GLuint WIDTH = 800, HEIGHT = 600;
 
 // Function prototypes
+void do_movement();
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
                   int mode);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+
+//Camera
+Camera camera(vec3(0.0f, 0.0f, 0.2f));
+bool keys[1024];
+GLfloat lastX = 400, lastY = 300;
+bool firstMouse = true;
+
+GLfloat deltaTime = 0.0f;
+GLfloat lastFrame = 0.0f;
 
 int main()
 {
@@ -72,6 +85,8 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, key_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
 
     // More hacking for my autocomplete.
 #ifndef CLANG_COMPLETE_ONLY
@@ -200,7 +215,13 @@ int main()
     
     while (!glfwWindowShouldClose(window))
     {
+        //set frame time
+        GLfloat currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
         glfwPollEvents();
+        do_movement();
 
         // Setup stuff
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -235,7 +256,7 @@ int main()
 
         vector<GLfloat> sliced;
         utils4D::getHull(raw, sliced);
-
+        
         cout << "---------------------------------------------" << endl;
         for (auto it = sliced.begin(); it != sliced.end(); ) {
             cout << "Face: ";
@@ -245,10 +266,11 @@ int main()
         }
 
         // 3D-2D Transformations
-        mat4 view3D = glm::lookAt(vec3(0.0f, 0.0f, 2.0f),
-                                  vec3(0.0f, 0.0f, 1.0f),
-                                  vec3(0.0f, 1.0f, 0.0f));
-        mat4 proj3D = glm::perspective(glm::radians(45.0f), 
+        //mat4 view3D = glm::lookAt(vec3(0.0f, 0.0f, 2.0f),
+        //                          vec3(0.0f, 0.0f, 1.0f),
+        //                          vec3(0.0f, 1.0f, 0.0f));
+        mat4 view3D = camera.GetViewMatrix();
+        mat4 proj3D = glm::perspective(glm::radians(camera.Zoom), 
                                        (float)WIDTH/(float)HEIGHT,
                                        0.1f, 100.0f);
         // Load Vertices
@@ -286,13 +308,57 @@ int main()
     glDeleteBuffers(1, &VBO);
     return 0;
 }
+// Moves/alters the camera positions based on user input
+void do_movement()
+{
+    // Camera controls
+    if(keys[GLFW_KEY_W])
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if(keys[GLFW_KEY_S])
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
+    if(keys[GLFW_KEY_A])
+        camera.ProcessKeyboard(LEFT, deltaTime);
+    if(keys[GLFW_KEY_D])
+        camera.ProcessKeyboard(RIGHT, deltaTime);
+}
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
-                  int mode)
+        int mode)
 {
     cout << key << endl;
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
+    if (key >= 0 && key < 1024)
+    {
+        if(action == GLFW_PRESS)
+            keys[key] = true;
+        else if(action == GLFW_RELEASE)
+            keys[key] = false;  
+    }
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    if(firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    GLfloat xoffset = xpos - lastX;
+    GLfloat yoffset = lastY - ypos;  // Reversed since y-coordinates go from bottom to left
+    
+    lastX = xpos;
+    lastY = ypos;
+
+    camera.ProcessMouseMovement(xoffset, yoffset);
+}	
+
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    camera.ProcessMouseScroll(yoffset);
 }

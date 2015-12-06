@@ -3,10 +3,25 @@
 
 #include <vector>
 
-// GL Includes
-#include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/ext.hpp>
+
+#ifdef CLANG_COMPLETE_ONLY
+    #define GL_GLEXT_PROTOTYPES
+#ifdef __LINUXOS__
+    #include <GL/gl.h>
+    #include <GL/glext.h>
+#endif
+#ifdef __APPLEOS__
+    #include <OpenGL/gl.h>
+    #include <OpenGL/glext.h>
+#endif
+#else
+    #define GLEW_STATIC
+    #include <GL/glew.h>
+#endif
 
 enum Camera_Movement
 {
@@ -15,6 +30,13 @@ enum Camera_Movement
     LEFT,
     RIGHT
 };
+
+// Default camera values
+const GLfloat YAW        = -90.0f;
+const GLfloat PITCH      =  0.0f;
+const GLfloat SPEED      =  3.0f;
+const GLfloat SENSITIVTY =  0.25f;
+const GLfloat ZOOM       =  45.0f;
 
 class Camera
 {
@@ -55,5 +77,5 @@ class Camera
         void updateCameraVectors();
 
 
-
+};
 #endif
