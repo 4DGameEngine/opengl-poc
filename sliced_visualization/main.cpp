@@ -59,6 +59,10 @@ bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
 
+//Light
+vec3 lightPos(1.2f, 1.0f, 2.0f);
+vec3 lightColor(1.0f, 1.0f, 1.0f);
+
 // Initial w
 GLfloat w = -4.0f;
 
@@ -87,6 +91,7 @@ int main()
         return -1;
     }
     glfwMakeContextCurrent(window);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetKeyCallback(window, key_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
@@ -128,8 +133,8 @@ int main()
     
     // Shader creation
     Shader edgeShader;
-    edgeShader.addVert("vertex_shader.glsl");
-    edgeShader.addFrag("fragment_shader.glsl");
+    edgeShader.addVert("light_vert.glsl");
+    edgeShader.addFrag("light_frag.glsl");
     edgeShader.link();
 
     // Textures
@@ -151,7 +156,7 @@ int main()
 
         // Setup stuff
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
@@ -159,12 +164,12 @@ int main()
 
         // 4D-3D Transformations
         mat4 model4D(1.0f), view4D;
-        GLfloat theta = glm::radians((GLfloat)glfwGetTime() * 50.0f);
+        /*GLfloat theta = glm::radians((GLfloat)glfwGetTime() * 50.0f);
         GLfloat cs = cos(theta), sn = sin(theta);
         model4D[0][0] = cs;
         model4D[0][3] = -sn;
         model4D[3][0] = sn;
-        model4D[3][3] = cs;
+        model4D[3][3] = cs;*/
         vec4 from(0.0f, 0.0f, 0.0f, 4.0f), to(0.0f, 0.0f, 0.0f, 0.0f); 
         vec4 up(0.0f, 1.0f, 0.0f, 0.0f), over(0.0f, 0.0f, 1.0f, 0.0f);
         view4D = utils4D::lookAt4D(from, to, up, over);
@@ -201,6 +206,7 @@ int main()
         mat4 proj3D = glm::perspective(glm::radians(camera.Zoom), 
                                        (float)WIDTH/(float)HEIGHT,
                                        0.1f, 100.0f);
+        mat4 model = mat4(1.0f);
         // Load Vertices
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -209,17 +215,48 @@ int main()
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GL_FLOAT), 
                               (GLvoid*)0);
         glEnableVertexAttribArray(0);
+        
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GL_FLOAT),
+                              (GLvoid*) (3*sizeof(GL_FLOAT)));
+        glEnableVertexAttribArray(1);
         glBindVertexArray(0);
 
         // Set shader uniforms and use shader
         edgeShader.use();
 
+        GLint objectColorLoc   = glGetUniformLocation(edgeShader.Program, "objectColor");
+        GLint lightColorLoc    = glGetUniformLocation(edgeShader.Program, "lightColor");
+        GLint viewPosLoc       = glGetUniformLocation(edgeShader.Program, "viewPos");
+        GLint matAmbientLoc    = glGetUniformLocation(edgeShader.Program, "material.ambient");
+        GLint matDiffuseLoc    = glGetUniformLocation(edgeShader.Program, "material.diffuse");
+        GLint matSpecularLoc   = glGetUniformLocation(edgeShader.Program, "material.specular");
+        GLint matShineLoc      = glGetUniformLocation(edgeShader.Program, "material.shininess");
+        GLint lightPosLoc      = glGetUniformLocation(edgeShader.Program, "light.position");   
+        GLint lightAmbientLoc  = glGetUniformLocation(edgeShader.Program, "light.ambient");
+        GLint lightDiffuseLoc  = glGetUniformLocation(edgeShader.Program, "light.diffuse");
+        GLint lightSpecularLoc = glGetUniformLocation(edgeShader.Program, "light.specular");
+
+        glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);
+        glUniform3f(lightColorLoc, lightColor.x, lightColor.y, lightColor.z);
+        glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
+        glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
+        glUniform3f(matAmbientLoc,  1.0f, 0.5f, 0.31f);
+        glUniform3f(matDiffuseLoc,  1.0f, 0.5f, 0.31f);
+        glUniform3f(matSpecularLoc, 0.5f, 0.5f, 0.5f);
+        glUniform1f(matShineLoc,    32.0f);
+        glUniform3f(lightAmbientLoc,  0.2f, 0.2f, 0.2f);
+        glUniform3f(lightDiffuseLoc,  0.5f, 0.5f, 0.5f);
+        glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f); 
+
         GLint viewLoc = glGetUniformLocation(edgeShader.Program,
                                              "view3D");
         GLint projectionLoc = glGetUniformLocation(edgeShader.Program,
                                                    "projection3D");
+        GLint modelLoc = glGetUniformLocation(edgeShader.Program,
+                                                "model");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view3D));
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(proj3D));
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
         // Draw
         glBindVertexArray(VAO);
