@@ -59,6 +59,9 @@ bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
 
+// Initial w
+GLfloat w = -4.0f;
+
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
 
@@ -199,6 +202,8 @@ int main()
         hypercube.push_back(vec4(vertices[i*4], vertices[i*4+1],
                                  vertices[i*4+2], vertices[i*4+3]));
     }
+    
+
 
     // Shader creation
     Shader edgeShader;
@@ -252,7 +257,7 @@ int main()
 
         // Get slice
         vector<Point_3> raw;
-        utils4D::rawSlice(transformedCube, indices, 48, -4.0f, raw);
+        utils4D::rawSlice(transformedCube, indices, 48, w, raw);
 
         vector<GLfloat> sliced;
         utils4D::getHull(raw, sliced);
@@ -266,9 +271,6 @@ int main()
         }
 
         // 3D-2D Transformations
-        //mat4 view3D = glm::lookAt(vec3(0.0f, 0.0f, 2.0f),
-        //                          vec3(0.0f, 0.0f, 1.0f),
-        //                          vec3(0.0f, 1.0f, 0.0f));
         mat4 view3D = camera.GetViewMatrix();
         mat4 proj3D = glm::perspective(glm::radians(camera.Zoom), 
                                        (float)WIDTH/(float)HEIGHT,
@@ -320,6 +322,11 @@ void do_movement()
         camera.ProcessKeyboard(LEFT, deltaTime);
     if(keys[GLFW_KEY_D])
         camera.ProcessKeyboard(RIGHT, deltaTime);
+    // Change w
+    if(keys[GLFW_KEY_Z])
+        w += 0.1f;
+    if(keys[GLFW_KEY_X])
+        w -= 0.1f;
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
