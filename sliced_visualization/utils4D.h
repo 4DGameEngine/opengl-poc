@@ -35,6 +35,11 @@ namespace utils4D
 
     vec4 intersectLine(const vec4 &start, const vec4 &end, const GLfloat w,
                        bool &success);
+    void packVector4D(const GLfloat *objArray, const int numVertices,
+                      vector<vec4> &objVector);
+    void transform4D(const vector<vec4> &object, const vec4 &camPos,
+                     const vec4 &objPos, const mat4 &model4D,
+                     const mat4 &view4D, vector<vec4> &transformed);
 }
 
 #endif
