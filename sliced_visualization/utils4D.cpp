@@ -152,3 +152,23 @@ glm::vec4 utils4D::intersectLine(const vec4 &start, const vec4 &end,
         return start + ratio * (end - start);
     }
 }
+
+void utils4D::packVector4D(const GLfloat *objArray, const int numVertices,
+                           vector<vec4> &objVector)
+{
+    for (int i = 0; i != numVertices; i++) {
+        objVector.push_back(vec4(objArray[i*4],
+                                 objArray[i*4+1],
+                                 objArray[i*4+2],
+                                 objArray[i*4+3]));
+    }
+}
+
+void utils4D::transform4D(const vector<vec4> &object, const vec4 &camPos,
+                          const vec4 &objPos, const mat4 &model4D,
+                          const mat4 &view4D, vector<vec4> &transformed)
+{
+    for (const auto &vert : object)
+        transformed.push_back(view4D * (model4D * vert + objPos - camPos));
+}
+

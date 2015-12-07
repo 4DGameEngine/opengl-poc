@@ -79,3 +79,24 @@ GLuint indices_hyperfrustrum[] = {
     12,  7,  4,
     12, 15,  7,
 };
+
+GLfloat vertices_hypertetrahedron[] = {
+     1.0f,  1.0f,  1.0f, -0.447,
+     1.0f, -1.0f, -1.0f, -0.447,
+    -1.0f,  1.0f, -1.0f, -0.447,
+    -1.0f, -1.0f,  1.0f, -0.447,
+     0.0f,  0.0f,  0.0f,  1.789,
+};
+
+GLuint indices_hypertetrahedron[] = {
+     0,  3,  1,
+     0,  2,  3,
+     0,  1,  2,
+     3,  2,  1,
+     0,  1,  4,
+     0,  2,  4,
+     0,  3,  4,
+     1,  2,  4,
+     1,  3,  4,
+     2,  3,  4,
+};

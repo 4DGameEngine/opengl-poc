@@ -44,7 +44,7 @@ using glm::to_string;
 using Point_3 = CGAL::Exact_predicates_inexact_constructions_kernel::Point_3;
 
 // Consts
-const GLuint WIDTH = 800, HEIGHT = 600;
+const GLuint WIDTH = 1200, HEIGHT = 900;
 
 // Function prototypes
 void do_movement();
@@ -60,11 +60,11 @@ GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
 
 //Light
-vec3 lightPos(1.2f, 1.0f, 2.0f);
-vec3 lightColor(1.0f, 1.0f, 1.0f);
+vec3 lightPos(0.0f, 6.0f, 6.0f);
+vec3 lightColor(0.5f, 0.5f, 0.5f);
 
 // Initial w
-GLfloat w = -4.0f;
+GLfloat w = 0.0f;
 
 GLfloat deltaTime = 0.0f;
 GLfloat lastFrame = 0.0f;
@@ -123,14 +123,16 @@ int main()
     #include "data.cpp"
 
     // Pack data into vector
-    vector<vec4> hypercube;
-    for (int i = 0; i != 16; i++) {
-        hypercube.push_back(vec4(vertices_hyperfrustrum[i*4], 
-                                 vertices_hyperfrustrum[i*4+1],
-                                 vertices_hyperfrustrum[i*4+2], 
-                                 vertices_hyperfrustrum[i*4+3]));
-    }
+    vector<vec4> hyperfrustrum;
+    utils4D::packVector4D(vertices_hyperfrustrum, 
+                          sizeof(vertices_hyperfrustrum)/sizeof(GL_FLOAT),
+                          hyperfrustrum);
     
+    vector<vec4> hypertetrahedron;
+    utils4D::packVector4D(vertices_hypertetrahedron, 
+                          sizeof(vertices_hypertetrahedron)/sizeof(GL_FLOAT),
+                          hypertetrahedron);
+
     // Shader creation
     Shader edgeShader;
     edgeShader.addVert("light_vert.glsl");
@@ -140,55 +142,79 @@ int main()
     // Textures
 
     // Set up buffer stuff
-    GLuint VAO, VBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
+    GLuint VAO[2], VBO[2];
+    glGenVertexArrays(2, VAO);
+    glGenBuffers(2, VBO);
     
     while (!glfwWindowShouldClose(window))
     {
-        //set frame time
+        // Set frame time
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
+        // Movement
         glfwPollEvents();
         do_movement();
 
         // Setup stuff
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
-        glLineWidth(3);
+        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        // glLineWidth(3);
 
         // 4D-3D Transformations
-        mat4 model4D(1.0f), view4D;
+        // Camera
+        mat4 view4D;
+        vec4 from(0.0f, 0.0f, 0.0f, 0.0f), to(0.0f, 0.0f, 0.0f, -1.0f); 
+        vec4 up(0.0f, 1.0f, 0.0f, 0.0f), over(0.0f, 0.0f, 1.0f, 0.0f);
+        view4D = utils4D::lookAt4D(from, to, up, over);
+
+        // Frustrum
+        mat4 modelFrustrum4D(1.0f);
+        vec4 posFrustrum4D(-1.0f, 0.0f, 0.0f, 0.0f);
         /*GLfloat theta = glm::radians((GLfloat)glfwGetTime() * 50.0f);
         GLfloat cs = cos(theta), sn = sin(theta);
         model4D[0][0] = cs;
         model4D[0][3] = -sn;
         model4D[3][0] = sn;
         model4D[3][3] = cs;*/
-        vec4 from(0.0f, 0.0f, 0.0f, 4.0f), to(0.0f, 0.0f, 0.0f, 0.0f); 
-        vec4 up(0.0f, 1.0f, 0.0f, 0.0f), over(0.0f, 0.0f, 1.0f, 0.0f);
-        view4D = utils4D::lookAt4D(from, to, up, over);
 
-        // Transform each vertex
-        vector<vec4> transformedCube;
-        for(int i = 0; i != 16; i++) {
-            vec4 transformedVert = view4D * (model4D * hypercube[i]- from); 
-            transformedCube.push_back(std::move(transformedVert));
-        }
+        // Tetrahedron
+        mat4 modelTetrahedron4D(1.0f);
+        vec4 posTetrahedron4D(1.0f, 0.0f, 0.0f, 0.0f);
+
+        // Transform objects
+        vector<vec4> transformedFrustrum;
+        utils4D::transform4D(hyperfrustrum, from, posFrustrum4D, 
+                             modelFrustrum4D, view4D, transformedFrustrum);
+
+        vector<vec4> transformedTetrahedron;
+        utils4D::transform4D(hypertetrahedron, from, posTetrahedron4D, 
+                             modelTetrahedron4D, view4D, transformedTetrahedron);
 
         // Get slice
+        // Frustrum
         vector<Point_3> raw_hyperfrustrum;
-        utils4D::rawSlice(transformedCube, indices_hyperfrustrum, 48, w,
-                          raw_hyperfrustrum);
+        utils4D::rawSlice(transformedFrustrum, indices_hyperfrustrum,
+                          sizeof(indices_hyperfrustrum)/(3 * sizeof(GL_FLOAT)),
+                          w, raw_hyperfrustrum);
 
         vector<GLfloat> sliced_hyperfrustrum;
         utils4D::getHull(raw_hyperfrustrum, sliced_hyperfrustrum);
+
+        // Tetrahedron
+        vector<Point_3> raw_hypertetrahedron;
+        utils4D::rawSlice(transformedTetrahedron, indices_hypertetrahedron,
+                          sizeof(indices_hypertetrahedron)/(3 * sizeof(GL_FLOAT)),
+                          w, raw_hypertetrahedron);
+
+        vector<GLfloat> sliced_hypertetrahedron;
+        utils4D::getHull(raw_hypertetrahedron, sliced_hypertetrahedron);
         
+        // Debug
         cout << "---------------------------------------------" << endl;
         for (auto it = sliced_hyperfrustrum.begin(); 
                   it != sliced_hyperfrustrum.end(); ) {
@@ -202,22 +228,37 @@ int main()
         }
 
         // 3D-2D Transformations
+        // Camera
         mat4 view3D = camera.GetViewMatrix();
         mat4 proj3D = glm::perspective(glm::radians(camera.Zoom), 
                                        (float)WIDTH/(float)HEIGHT,
                                        0.1f, 100.0f);
-        mat4 model = mat4(1.0f);
+
         // Load Vertices
-        glBindVertexArray(VAO);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        // Frustrum
+        glBindVertexArray(VAO[0]);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
         glBufferData(GL_ARRAY_BUFFER, sliced_hyperfrustrum.size() * sizeof(GL_FLOAT),
                      &sliced_hyperfrustrum[0], GL_DYNAMIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GL_FLOAT), 
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GL_FLOAT), 
+                              (GLvoid*)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GL_FLOAT),
+                              (GLvoid*)(3 * sizeof(GL_FLOAT)));
+        glEnableVertexAttribArray(1);
+        glBindVertexArray(0);
+
+        // Tetrahedron
+        glBindVertexArray(VAO[1]);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO[1]);
+        glBufferData(GL_ARRAY_BUFFER, sliced_hypertetrahedron.size() * sizeof(GL_FLOAT),
+                     &sliced_hypertetrahedron[0], GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GL_FLOAT), 
                               (GLvoid*)0);
         glEnableVertexAttribArray(0);
         
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(GL_FLOAT),
-                              (GLvoid*) (3*sizeof(GL_FLOAT)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GL_FLOAT),
+                              (GLvoid*)(3 * sizeof(GL_FLOAT)));
         glEnableVertexAttribArray(1);
         glBindVertexArray(0);
 
@@ -243,7 +284,7 @@ int main()
         glUniform3f(matAmbientLoc,  1.0f, 0.5f, 0.31f);
         glUniform3f(matDiffuseLoc,  1.0f, 0.5f, 0.31f);
         glUniform3f(matSpecularLoc, 0.5f, 0.5f, 0.5f);
-        glUniform1f(matShineLoc,    32.0f);
+        glUniform1f(matShineLoc,    16.0f);
         glUniform3f(lightAmbientLoc,  0.2f, 0.2f, 0.2f);
         glUniform3f(lightDiffuseLoc,  0.5f, 0.5f, 0.5f);
         glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f); 
@@ -256,12 +297,17 @@ int main()
                                                 "model");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view3D));
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(proj3D));
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelFrustrum4D));
 
         // Draw
-        glBindVertexArray(VAO);
+        // Frustrum
+        glBindVertexArray(VAO[0]);
         glDrawArrays(GL_TRIANGLES, 0, sliced_hyperfrustrum.size()/6);
         glBindVertexArray(0);
+
+        // Tetrahedron
+        glBindVertexArray(VAO[1]);
+        glDrawArrays(GL_TRIANGLES, 0, sliced_hypertetrahedron.size()/6);
 
         // Swap the screen buffers*/
         glfwSwapBuffers(window);
@@ -269,8 +315,8 @@ int main()
 
     // Terminate GLFW and cleanup
     glfwTerminate();
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+    glDeleteVertexArrays(2, VAO);
+    glDeleteBuffers(2, VBO);
     return 0;
 }
 
@@ -288,9 +334,9 @@ void do_movement()
         camera.ProcessKeyboard(RIGHT, deltaTime);
     // Change w
     if(keys[GLFW_KEY_Z])
-        w += 0.1f;
+        w += 0.05f;
     if(keys[GLFW_KEY_X])
-        w -= 0.1f;
+        w -= 0.05f;
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
