@@ -11,16 +11,16 @@ LDFLAGS=-std=c++1y -stdlib=libc++ -lc++abi
 OGL_LIBRARY_PATH=$(HOME)/opengl/lib
 OGL_INCLUDE_PATH=$(HOME)/opengl/include
 OGL_STATIC_LIBS=$(OGL_LIBRARY_PATH)/libGLEW.a $(OGL_LIBRARY_PATH)/libsoil2.a
-OGL_DYNAMIC_LIBS=-lglfw
+OGL_DYNAMIC_LIBS=-lglfw -lCGAL -lCGAL_Core -lgmp
 OUTFILE=sliced
 
 UNAME_S=$(shell uname -s)
 ifeq ($(UNAME_S),Linux)
-	OGL_EXTRA_LIBS=-lGL -lX11 -lpthread -lXrandr -lXi -lCGAL -lCGAL_Core -lgmp
+	OGL_EXTRA_LIBS=-lGL -lX11 -lpthread -lXrandr -lXi 
 	CXXFLAGS+=-D__LINUXOS__
 endif
 ifeq ($(UNAME_S),Darwin)
-	OGL_EXTRA_LIBS=-framework OpenGL -lCGAL -lCGAL_Core -lgmp
+	OGL_EXTRA_LIBS=-framework OpenGL
 	CXXFLAGS+=-D__APPLEOS__
 endif
 	

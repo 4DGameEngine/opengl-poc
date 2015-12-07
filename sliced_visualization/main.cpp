@@ -47,7 +47,7 @@ using Point_3 = CGAL::Exact_predicates_inexact_constructions_kernel::Point_3;
 const GLuint WIDTH = 1200, HEIGHT = 900;
 
 // Function prototypes
-void do_movement();
+void do_movement(GLfloat deltaTime);
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
                   int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -58,16 +58,6 @@ Camera camera(vec3(0.0f, 0.0f, 0.2f));
 bool keys[1024];
 GLfloat lastX = WIDTH/2, lastY = HEIGHT/2;
 bool firstMouse = true;
-
-// Light
-vec3 lightPos(0.0f, 3.0f, 3.0f);
-vec3 lightColor(1.0f, 1.0f, 1.0f);
-
-// Initial w
-GLfloat w = 0.0f;
-
-GLfloat deltaTime = 0.0f;
-GLfloat lastFrame = 0.0f;
 
 int main()
 {
@@ -82,7 +72,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", 
+    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "LearnOpenGL", 
                                           nullptr, nullptr);    
     if (window == nullptr)
     {
@@ -151,6 +141,10 @@ int main()
     glGenVertexArrays(2, VAO);
     glGenBuffers(2, VBO);
     
+    // Frame timing
+    GLfloat deltaTime = 0.0f;
+    GLfloat lastFrame = 0.0f;
+
     while (!glfwWindowShouldClose(window))
     {
         // Set frame time
@@ -160,7 +154,7 @@ int main()
 
         // Movement
         glfwPollEvents();
-        do_movement();
+        do_movement(deltaTime);
 
         // Setup stuff
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -176,16 +170,17 @@ int main()
         vec4 from(0.0f, 0.0f, 0.0f, 0.0f), to(0.0f, 0.0f, 0.0f, -1.0f); 
         vec4 up(0.0f, 1.0f, 0.0f, 0.0f), over(0.0f, 0.0f, 1.0f, 0.0f);
         view4D = utils4D::lookAt4D(from, to, up, over);
+        mat4 model4D = camera.GetModel4D();
 
         // Frustrum
         mat4 modelFrustrum4D(1.0f);
         vec4 posFrustrum4D(-2.0f, 0.0f, 0.0f, 0.0f);
         GLfloat theta = glm::radians((GLfloat)glfwGetTime() * 50.0f);
-        GLfloat cs = cos(theta), sn = sin(theta);
-        modelFrustrum4D[0][0] = cs;
-        modelFrustrum4D[0][3] = -sn;
-        modelFrustrum4D[3][0] = sn;
-        modelFrustrum4D[3][3] = cs;
+        GLfloat cs1 = cos(theta), sn1 = sin(theta);
+        modelFrustrum4D[0][0] = cs1;
+        modelFrustrum4D[0][3] = -sn1;
+        modelFrustrum4D[3][0] = sn1;
+        modelFrustrum4D[3][3] = cs1;
 
         // Tetrahedron
         mat4 modelTetrahedron4D(1.0f);
@@ -200,18 +195,20 @@ int main()
         // Transform objects
         vector<vec4> transformedFrustrum;
         utils4D::transform4D(hyperfrustrum, from, posFrustrum4D, 
-                             modelFrustrum4D, view4D, transformedFrustrum);
+                             modelFrustrum4D * model4D, view4D, 
+                             transformedFrustrum);
 
         vector<vec4> transformedTetrahedron;
         utils4D::transform4D(hypertetrahedron, from, posTetrahedron4D, 
-                             modelTetrahedron4D, view4D, transformedTetrahedron);
+                             modelTetrahedron4D * model4D, view4D, 
+                             transformedTetrahedron);
 
         // Get slice
         // Frustrum
         vector<Point_3> raw_hyperfrustrum;
         utils4D::rawSlice(transformedFrustrum, indices_hyperfrustrum,
                           sizeof(indices_hyperfrustrum)/(3 * sizeof(GL_FLOAT)),
-                          w, raw_hyperfrustrum);
+                          camera.w, raw_hyperfrustrum);
 
         vector<GLfloat> sliced_hyperfrustrum;
         utils4D::getHull(raw_hyperfrustrum, sliced_hyperfrustrum);
@@ -220,13 +217,13 @@ int main()
         vector<Point_3> raw_hypertetrahedron;
         utils4D::rawSlice(transformedTetrahedron, indices_hypertetrahedron,
                           sizeof(indices_hypertetrahedron)/(3 * sizeof(GL_FLOAT)),
-                          w, raw_hypertetrahedron);
+                          camera.w, raw_hypertetrahedron);
 
         vector<GLfloat> sliced_hypertetrahedron;
         utils4D::getHull(raw_hypertetrahedron, sliced_hypertetrahedron);
         
         // Debug
-        cout << "---------------------------------------------" << endl;
+        /*cout << "---------------------------------------------" << endl;
         for (auto it = sliced_hyperfrustrum.begin(); 
                   it != sliced_hyperfrustrum.end(); ) {
             cout << "Face: " << endl;
@@ -237,7 +234,7 @@ int main()
             cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ") ";
             cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ") " << endl;
             cout << ".........." << endl;
-        }
+        }*/
 
         // 3D-2D Transformations
         // Camera
@@ -278,6 +275,9 @@ int main()
         frustrumShader.use();
 
         // Lighting
+        vec3 lightPos(0.0f, 3.0f, 3.0f);
+        vec3 lightColor(1.0f, 1.0f, 1.0f);
+
         GLint objectColorLoc   = glGetUniformLocation(frustrumShader.Program, "objectColor");
         GLint lightColorLoc    = glGetUniformLocation(frustrumShader.Program, "lightColor");
         GLint viewPosLoc       = glGetUniformLocation(frustrumShader.Program, "viewPos");
@@ -290,7 +290,7 @@ int main()
         GLint lightDiffuseLoc  = glGetUniformLocation(frustrumShader.Program, "light.diffuse");
         GLint lightSpecularLoc = glGetUniformLocation(frustrumShader.Program, "light.specular");
 
-        glUniform3f(objectColorLoc, 0.7f, 0.8f, 0.2f);
+        glUniform3f(objectColorLoc, 0.15f, 1.0f, 0.1f);
         glUniform3f(lightColorLoc, lightColor.x, lightColor.y, lightColor.z);
         glUniform3f(lightPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
         glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
@@ -299,7 +299,7 @@ int main()
         glUniform3f(matSpecularLoc, 0.8f, 0.8f, 0.8f);
         glUniform1f(matShineLoc,    32.0f);
         glUniform3f(lightAmbientLoc,  0.2f, 0.2f, 0.2f);
-        glUniform3f(lightDiffuseLoc,  0.8f, 0.8f, 0.8f);
+        glUniform3f(lightDiffuseLoc,  0.6f, 0.6f, 0.6f);
         glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f); 
 
         // Perspective
@@ -334,14 +334,14 @@ int main()
         lightDiffuseLoc  = glGetUniformLocation(tetrahedronShader.Program, "light.diffuse");
         lightSpecularLoc = glGetUniformLocation(tetrahedronShader.Program, "light.specular");
 
-        glUniform3f(objectColorLoc, 0.8f, 0.2f, 0.8f);
+        glUniform3f(objectColorLoc, 0.9f, 0.2f, 0.9f);
         glUniform3f(lightColorLoc, lightColor.x, lightColor.y, lightColor.z);
         glUniform3f(lightPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
         glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
         glUniform3f(matAmbientLoc,  1.0f, 0.5f, 0.31f);
         glUniform3f(matDiffuseLoc,  0.5f, 0.25f, 0.15f);
         glUniform3f(matSpecularLoc, 0.5f, 0.5f, 0.5f);
-        glUniform1f(matShineLoc,    16.0f);
+        glUniform1f(matShineLoc,    26.0f);
         glUniform3f(lightAmbientLoc,  0.2f, 0.2f, 0.2f);
         glUniform3f(lightDiffuseLoc,  0.5f, 0.5f, 0.5f);
         glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f); 
@@ -372,7 +372,7 @@ int main()
 }
 
 // Moves/alters the camera positions based on user input
-void do_movement()
+void do_movement(GLfloat deltaTime)
 {
     // Camera controls
     if(keys[GLFW_KEY_W])
@@ -385,9 +385,15 @@ void do_movement()
         camera.ProcessKeyboard(RIGHT, deltaTime);
     // Change w
     if(keys[GLFW_KEY_Z])
-        w += 0.05f;
+        camera.ProcessKeyboard(W_ADD, deltaTime);
     if(keys[GLFW_KEY_X])
-        w -= 0.05f;
+        camera.ProcessKeyboard(W_SUB, deltaTime);
+    if(keys[GLFW_KEY_1])
+        camera.ProcessKeyboard(YZ_ROT, deltaTime);
+    cout << "---------------------" << endl;
+    cout << "Position: " << to_string(camera.Position) << endl;
+    cout << "W-slice: " << camera.w << endl;
+    cout << "YZ Rotation Angle: " << glm::degrees(camera.theta_yz) << endl;
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action,
