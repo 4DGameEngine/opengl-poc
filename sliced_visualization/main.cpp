@@ -53,15 +53,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action,
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
-//Camera
+// Camera
 Camera camera(vec3(0.0f, 0.0f, 0.2f));
 bool keys[1024];
-GLfloat lastX = 400, lastY = 300;
+GLfloat lastX = WIDTH/2, lastY = HEIGHT/2;
 bool firstMouse = true;
 
-//Light
-vec3 lightPos(0.0f, 6.0f, 6.0f);
-vec3 lightColor(0.5f, 0.5f, 0.5f);
+// Light
+vec3 lightPos(0.0f, 3.0f, 3.0f);
+vec3 lightColor(1.0f, 1.0f, 1.0f);
 
 // Initial w
 GLfloat w = 0.0f;
@@ -134,10 +134,15 @@ int main()
                           hypertetrahedron);
 
     // Shader creation
-    Shader edgeShader;
-    edgeShader.addVert("light_vert.glsl");
-    edgeShader.addFrag("light_frag.glsl");
-    edgeShader.link();
+    Shader frustrumShader;
+    frustrumShader.addVert("light_vert.glsl");
+    frustrumShader.addFrag("light_frag.glsl");
+    frustrumShader.link();
+
+    Shader tetrahedronShader;
+    tetrahedronShader.addVert("light_vert.glsl");
+    tetrahedronShader.addFrag("light_frag.glsl");
+    tetrahedronShader.link();
 
     // Textures
 
@@ -174,17 +179,23 @@ int main()
 
         // Frustrum
         mat4 modelFrustrum4D(1.0f);
-        vec4 posFrustrum4D(-1.0f, 0.0f, 0.0f, 0.0f);
-        /*GLfloat theta = glm::radians((GLfloat)glfwGetTime() * 50.0f);
+        vec4 posFrustrum4D(-2.0f, 0.0f, 0.0f, 0.0f);
+        GLfloat theta = glm::radians((GLfloat)glfwGetTime() * 50.0f);
         GLfloat cs = cos(theta), sn = sin(theta);
-        model4D[0][0] = cs;
-        model4D[0][3] = -sn;
-        model4D[3][0] = sn;
-        model4D[3][3] = cs;*/
+        modelFrustrum4D[0][0] = cs;
+        modelFrustrum4D[0][3] = -sn;
+        modelFrustrum4D[3][0] = sn;
+        modelFrustrum4D[3][3] = cs;
 
         // Tetrahedron
         mat4 modelTetrahedron4D(1.0f);
-        vec4 posTetrahedron4D(1.0f, 0.0f, 0.0f, 0.0f);
+        vec4 posTetrahedron4D(2.0f, 0.0f, 0.0f, 0.0f);
+        GLfloat theta2 = glm::radians((GLfloat)glfwGetTime() * 20.0f);
+        GLfloat cs2 = cos(theta2), sn2 = sin(theta2);
+        modelTetrahedron4D[0][0] = cs2;
+        modelTetrahedron4D[0][3] = -sn2;
+        modelTetrahedron4D[3][0] = sn2;
+        modelTetrahedron4D[3][3] = cs2;
 
         // Transform objects
         vector<vec4> transformedFrustrum;
@@ -225,10 +236,12 @@ int main()
             cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ") " << endl;
             cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ") ";
             cout << "(" << *it++ << ", " << *it++ << ", " << *it++ << ") " << endl;
+            cout << ".........." << endl;
         }
 
         // 3D-2D Transformations
         // Camera
+        mat4 model3D(1.0f);
         mat4 view3D = camera.GetViewMatrix();
         mat4 proj3D = glm::perspective(glm::radians(camera.Zoom), 
                                        (float)WIDTH/(float)HEIGHT,
@@ -256,58 +269,96 @@ int main()
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GL_FLOAT), 
                               (GLvoid*)0);
         glEnableVertexAttribArray(0);
-        
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GL_FLOAT),
                               (GLvoid*)(3 * sizeof(GL_FLOAT)));
         glEnableVertexAttribArray(1);
         glBindVertexArray(0);
 
-        // Set shader uniforms and use shader
-        edgeShader.use();
+        // Set shader uniforms and use frustrum shader
+        frustrumShader.use();
 
-        GLint objectColorLoc   = glGetUniformLocation(edgeShader.Program, "objectColor");
-        GLint lightColorLoc    = glGetUniformLocation(edgeShader.Program, "lightColor");
-        GLint viewPosLoc       = glGetUniformLocation(edgeShader.Program, "viewPos");
-        GLint matAmbientLoc    = glGetUniformLocation(edgeShader.Program, "material.ambient");
-        GLint matDiffuseLoc    = glGetUniformLocation(edgeShader.Program, "material.diffuse");
-        GLint matSpecularLoc   = glGetUniformLocation(edgeShader.Program, "material.specular");
-        GLint matShineLoc      = glGetUniformLocation(edgeShader.Program, "material.shininess");
-        GLint lightPosLoc      = glGetUniformLocation(edgeShader.Program, "light.position");   
-        GLint lightAmbientLoc  = glGetUniformLocation(edgeShader.Program, "light.ambient");
-        GLint lightDiffuseLoc  = glGetUniformLocation(edgeShader.Program, "light.diffuse");
-        GLint lightSpecularLoc = glGetUniformLocation(edgeShader.Program, "light.specular");
+        // Lighting
+        GLint objectColorLoc   = glGetUniformLocation(frustrumShader.Program, "objectColor");
+        GLint lightColorLoc    = glGetUniformLocation(frustrumShader.Program, "lightColor");
+        GLint viewPosLoc       = glGetUniformLocation(frustrumShader.Program, "viewPos");
+        GLint matAmbientLoc    = glGetUniformLocation(frustrumShader.Program, "material.ambient");
+        GLint matDiffuseLoc    = glGetUniformLocation(frustrumShader.Program, "material.diffuse");
+        GLint matSpecularLoc   = glGetUniformLocation(frustrumShader.Program, "material.specular");
+        GLint matShineLoc      = glGetUniformLocation(frustrumShader.Program, "material.shininess");
+        GLint lightPosLoc      = glGetUniformLocation(frustrumShader.Program, "light.position");   
+        GLint lightAmbientLoc  = glGetUniformLocation(frustrumShader.Program, "light.ambient");
+        GLint lightDiffuseLoc  = glGetUniformLocation(frustrumShader.Program, "light.diffuse");
+        GLint lightSpecularLoc = glGetUniformLocation(frustrumShader.Program, "light.specular");
 
-        glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);
+        glUniform3f(objectColorLoc, 0.7f, 0.8f, 0.2f);
         glUniform3f(lightColorLoc, lightColor.x, lightColor.y, lightColor.z);
-        glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
+        glUniform3f(lightPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
         glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
         glUniform3f(matAmbientLoc,  1.0f, 0.5f, 0.31f);
-        glUniform3f(matDiffuseLoc,  1.0f, 0.5f, 0.31f);
+        glUniform3f(matDiffuseLoc,  0.5f, 0.25f, 0.15f);
+        glUniform3f(matSpecularLoc, 0.8f, 0.8f, 0.8f);
+        glUniform1f(matShineLoc,    32.0f);
+        glUniform3f(lightAmbientLoc,  0.2f, 0.2f, 0.2f);
+        glUniform3f(lightDiffuseLoc,  0.8f, 0.8f, 0.8f);
+        glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f); 
+
+        // Perspective
+        GLint viewLoc = glGetUniformLocation(frustrumShader.Program,
+                                             "view3D");
+        GLint projectionLoc = glGetUniformLocation(frustrumShader.Program,
+                                                   "projection3D");
+        GLint modelLoc = glGetUniformLocation(frustrumShader.Program,
+                                              "model3D");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view3D));
+        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(proj3D));
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model3D));
+
+        // Draw Frustrum
+        glBindVertexArray(VAO[0]);
+        glDrawArrays(GL_TRIANGLES, 0, sliced_hyperfrustrum.size()/6);
+        glBindVertexArray(0);
+
+        // Set shader uniforms and use tetrahedron shader
+        tetrahedronShader.use();
+
+        // Lighting
+        objectColorLoc   = glGetUniformLocation(tetrahedronShader.Program, "objectColor");
+        lightColorLoc    = glGetUniformLocation(tetrahedronShader.Program, "lightColor");
+        viewPosLoc       = glGetUniformLocation(tetrahedronShader.Program, "viewPos");
+        matAmbientLoc    = glGetUniformLocation(tetrahedronShader.Program, "material.ambient");
+        matDiffuseLoc    = glGetUniformLocation(tetrahedronShader.Program, "material.diffuse");
+        matSpecularLoc   = glGetUniformLocation(tetrahedronShader.Program, "material.specular");
+        matShineLoc      = glGetUniformLocation(tetrahedronShader.Program, "material.shininess");
+        lightPosLoc      = glGetUniformLocation(tetrahedronShader.Program, "light.position");   
+        lightAmbientLoc  = glGetUniformLocation(tetrahedronShader.Program, "light.ambient");
+        lightDiffuseLoc  = glGetUniformLocation(tetrahedronShader.Program, "light.diffuse");
+        lightSpecularLoc = glGetUniformLocation(tetrahedronShader.Program, "light.specular");
+
+        glUniform3f(objectColorLoc, 0.8f, 0.2f, 0.8f);
+        glUniform3f(lightColorLoc, lightColor.x, lightColor.y, lightColor.z);
+        glUniform3f(lightPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
+        glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
+        glUniform3f(matAmbientLoc,  1.0f, 0.5f, 0.31f);
+        glUniform3f(matDiffuseLoc,  0.5f, 0.25f, 0.15f);
         glUniform3f(matSpecularLoc, 0.5f, 0.5f, 0.5f);
         glUniform1f(matShineLoc,    16.0f);
         glUniform3f(lightAmbientLoc,  0.2f, 0.2f, 0.2f);
         glUniform3f(lightDiffuseLoc,  0.5f, 0.5f, 0.5f);
         glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f); 
 
-        GLint viewLoc = glGetUniformLocation(edgeShader.Program,
-                                             "view3D");
-        GLint projectionLoc = glGetUniformLocation(edgeShader.Program,
-                                                   "projection3D");
-        GLint modelLoc = glGetUniformLocation(edgeShader.Program,
-                                                "model");
+        // Perspective
+        viewLoc = glGetUniformLocation(tetrahedronShader.Program, "view3D");
+        projectionLoc = glGetUniformLocation(tetrahedronShader.Program,
+                                             "projection3D");
+        modelLoc = glGetUniformLocation(tetrahedronShader.Program, "model3D");
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view3D));
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(proj3D));
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelFrustrum4D));
-
-        // Draw
-        // Frustrum
-        glBindVertexArray(VAO[0]);
-        glDrawArrays(GL_TRIANGLES, 0, sliced_hyperfrustrum.size()/6);
-        glBindVertexArray(0);
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model3D));
 
         // Tetrahedron
         glBindVertexArray(VAO[1]);
         glDrawArrays(GL_TRIANGLES, 0, sliced_hypertetrahedron.size()/6);
+        glBindVertexArray(0);
 
         // Swap the screen buffers*/
         glfwSwapBuffers(window);
