@@ -61,7 +61,9 @@ bool firstMouse = true;
 
 //Light
 vec3 lightPos(0.0f, 6.0f, 6.0f);
-vec3 lightColor(0.5f, 0.5f, 0.5f);
+vec3 lightColor(0.25f, 0.25f, 0.25f);
+vec3 light2Pos(0.0f, -4.0f, -5.0f);
+vec3 light2Color(0.25f, 0.25f, 0.25f);
 
 // Initial w
 GLfloat w = 0.0f;
@@ -276,10 +278,17 @@ int main()
         GLint lightAmbientLoc  = glGetUniformLocation(edgeShader.Program, "light.ambient");
         GLint lightDiffuseLoc  = glGetUniformLocation(edgeShader.Program, "light.diffuse");
         GLint lightSpecularLoc = glGetUniformLocation(edgeShader.Program, "light.specular");
+        GLint light2ColorLoc   = glGetUniformLocation(edgeShader.Program, "light2Color");
+        GLint light2PosLoc     = glGetUniformLocation(edgeShader.Program, "light2.position");
+        GLint light2AmbientLoc = glGetUniformLocation(edgeShader.Program, "light2.ambient");
+        GLint light2DiffuseLoc = glGetUniformLocation(edgeShader.Program, "light2.diffuse");
+        GLint light2SpecularLoc= glGetUniformLocation(edgeShader.Program, "light2.specular");
 
         glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);
         glUniform3f(lightColorLoc, lightColor.x, lightColor.y, lightColor.z);
         glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
+        glUniform3f(light2ColorLoc, light2Color.x, light2Color.y, light2Color.z);
+        glUniform3f(light2PosLoc, light2Pos.x, light2Pos.y, light2Pos.z);
         glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
         glUniform3f(matAmbientLoc,  1.0f, 0.5f, 0.31f);
         glUniform3f(matDiffuseLoc,  1.0f, 0.5f, 0.31f);
@@ -287,7 +296,10 @@ int main()
         glUniform1f(matShineLoc,    16.0f);
         glUniform3f(lightAmbientLoc,  0.2f, 0.2f, 0.2f);
         glUniform3f(lightDiffuseLoc,  0.5f, 0.5f, 0.5f);
-        glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f); 
+        glUniform3f(lightSpecularLoc, 0.5f, 0.5f, 0.5f); 
+        glUniform3f(light2AmbientLoc,  0.2f, 0.2f, 0.2f);
+        glUniform3f(light2DiffuseLoc,  0.5f, 0.5f, 0.5f);
+        glUniform3f(light2SpecularLoc, 0.5f, 0.5f, 0.5f); 
 
         GLint viewLoc = glGetUniformLocation(edgeShader.Program,
                                              "view3D");
