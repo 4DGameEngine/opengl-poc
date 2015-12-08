@@ -55,7 +55,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 // Camera
-Camera camera(vec3(0.0f, 0.0f, 0.0f));
+vec3 INIT_POS(-2.4f, 3.2f, 5.0f);
+Camera camera(INIT_POS);
 bool keys[1024];
 GLfloat lastX = WIDTH/2, lastY = HEIGHT/2;
 bool firstMouse = true;
@@ -138,6 +139,11 @@ int main()
     tetrahedronShader.addFrag("light_frag.glsl");
     tetrahedronShader.link();
 
+    Shader cubeShader;
+    cubeShader.addVert("light_vert.glsl");
+    cubeShader.addFrag("light_frag.glsl");
+    cubeShader.link();
+
     // Textures
 
     // Frame timing
@@ -169,7 +175,7 @@ int main()
         GLfloat w = camera.w;
 
         // Frustrum 
-        vec4 posFrustrum4D(-2.0f, 0.0f, 0.0f, 0.0f);
+        vec4 posFrustrum4D(-std::sqrt(3.0f), 0.0f, 1.0f, 0.0f);
         mat4 modelFrustrum4D(1.0f);
         GLfloat cs1 = cos(theta), sn1 = sin(theta);
         modelFrustrum4D[0][0] = cs1;
@@ -178,13 +184,17 @@ int main()
         modelFrustrum4D[3][3] = cs1;
 
         // Tetrahedron
-        vec4 posTetrahedron4D(2.0f, 0.0f, 0.0f, 0.0f);
+        vec4 posTetrahedron4D(std::sqrt(3.0f), 0.0f, 1.0f, 0.0f);
         mat4 modelTetrahedron4D(1.0f);
         GLfloat cs2 = cos(theta * -0.8f), sn2 = sin(theta * -0.8f);
         modelTetrahedron4D[0][0] = cs2;
         modelTetrahedron4D[0][3] = -sn2;
         modelTetrahedron4D[3][0] = sn2;
         modelTetrahedron4D[3][3] = cs2;
+
+        // Cube
+        vec4 posCube4D(0.0f, 0.0f, -2.0f, 0.0f);
+        mat4 modelCube4D(1.0f);
 
         // 3D-2D Transformations
         // Camera
@@ -222,9 +232,23 @@ int main()
             light,
         });
 
+        Object4D hyperCubeObj (Object4D::ObjInfo {
+            vertices_hypercube,
+            sizeof(vertices_hypercube)/(4 * sizeof(GL_FLOAT)),
+            indices_hypercube,
+            sizeof(indices_hypercube)/(3 * sizeof(GL_FLOAT)),
+            posCube4D,
+            modelCube4D,
+            model3D,
+            proj3D,
+            cubeMat,
+            light,
+        });
+
         // Draw
         hyperFrustrumObj.draw(w, rotMatrix4D, camPos, view3D, frustrumShader);
         hyperTetrahedronObj.draw(w, rotMatrix4D, camPos, view3D, tetrahedronShader);
+        hyperCubeObj.draw(w, rotMatrix4D, camPos, view3D, cubeShader);
         
         // Swap the screen buffers*/
         glfwSwapBuffers(window);
@@ -254,11 +278,11 @@ void do_movement(GLfloat deltaTime)
     if (keys[GLFW_KEY_Q])
         camera.ProcessKeyboard(W_SUB, deltaTime);
     if (keys[GLFW_KEY_1])
-        camera.ProcessKeyboard(YZ_ROT_DEC, deltaTime);
+        camera.ProcessKeyboard(ROT_DEC, deltaTime);
     if (keys[GLFW_KEY_3])
-        camera.ProcessKeyboard(YZ_ROT_INC, deltaTime);
+        camera.ProcessKeyboard(ROT_INC, deltaTime);
     if (keys[GLFW_KEY_2]) {
-        camera = Camera(vec3(0.0f, 0.0f, 0.0f));
+        camera = Camera(INIT_POS);
         theta = 0.0f;
     }
     if (keys[GLFW_KEY_R])
@@ -267,7 +291,7 @@ void do_movement(GLfloat deltaTime)
     cout << "---------------------" << endl;
     cout << "Position: " << to_string(camera.Position) << endl;
     cout << "W-slice: " << camera.w << endl;
-    cout << "YZ Rotation Angle: " << glm::degrees(camera.theta_yz) << endl;
+    cout << "ZW Rotation Angle: " << glm::degrees(camera.theta) << endl;
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action,

@@ -6,7 +6,7 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, GLfloat yaw, GLfloat pitch)
                : Front(glm::vec3(0.0f, 0.0f, -1.0f)), 
                  w(0.0f),
                  w_unit(1.0f),
-                 theta_yz(0.0f),
+                 theta(0.0f),
                  MovementSpeed(SPEED), 
                  RotationSpeed(ROTATION_SPEED),
                  MouseSensitivity(SENSITIVTY),
@@ -41,10 +41,10 @@ glm::mat4 Camera::GetViewMatrix()
 glm::mat4 Camera::GetRotMatrix4D()
 {
     glm::mat4 model4D(1.0f);
-    GLfloat cs0 = cos(-theta_yz), sn0 = sin(-theta_yz);
+    GLfloat cs0 = cos(-theta), sn0 = sin(-theta);
     model4D[0][0] = cs0;
-    model4D[0][3] = -sn0;
-    model4D[3][0] = sn0;
+    model4D[3][0] = -sn0;
+    model4D[0][3] = sn0;
     model4D[3][3] = cs0;
     return model4D;
 }
@@ -71,15 +71,15 @@ void Camera::ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime)
         case W_SUB:
             w -= w_unit * velocity;
             break;
-        case YZ_ROT_INC:
-            theta_yz += ROTATION_SPEED * deltaTime;
-            while (theta_yz >= glm::radians(360.0f)) 
-                theta_yz -= glm::radians(360.0f);
+        case ROT_INC:
+            theta += ROTATION_SPEED * deltaTime;
+            while (theta >= glm::radians(360.0f)) 
+                theta -= glm::radians(360.0f);
             break;
-        case YZ_ROT_DEC:
-            theta_yz -= ROTATION_SPEED * deltaTime;
-            while (theta_yz <= glm::radians(-360.0f)) 
-                theta_yz += glm::radians(360.0f);
+        case ROT_DEC:
+            theta -= ROTATION_SPEED * deltaTime;
+            while (theta <= glm::radians(-360.0f)) 
+                theta += glm::radians(360.0f);
             break;
         default:
             break;

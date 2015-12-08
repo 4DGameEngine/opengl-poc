@@ -168,8 +168,8 @@ void utils4D::transform4D(const vector<vec4> &object, const GLfloat w,
                           const mat4 &camRot4D, const vec4 &objPos, 
                           const mat4 &model4D, vector<vec4> &transformed)
 {
-    vec4 relPosOffset = objPos - vec4(0.0f, 0.0f, 0.0f, w);
+    vec4 wOffset(0.0f, 0.0f, 0.0f, w);
     for (const auto &vert : object)
-        transformed.push_back(camRot4D * (model4D * vert + relPosOffset));
+        transformed.push_back(camRot4D * (model4D * vert + objPos) - wOffset);
 }
 

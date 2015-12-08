@@ -31,8 +31,8 @@ enum Camera_Movement
     RIGHT,
     W_ADD,
     W_SUB,
-    YZ_ROT_INC,
-    YZ_ROT_DEC,
+    ROT_INC,
+    ROT_DEC,
 };
 
 // Default camera values
@@ -54,7 +54,7 @@ class Camera
         glm::vec3 WorldUp;
         GLfloat w;
         GLfloat w_unit;
-        GLfloat theta_yz;
+        GLfloat theta;
 
         // Euler Angles
         GLfloat Yaw;
