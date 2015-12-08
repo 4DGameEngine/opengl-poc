@@ -36,7 +36,6 @@ using glm::mat4;
 using glm::to_string;
 using Point_3 = CGAL::Exact_predicates_inexact_constructions_kernel::Point_3;
 
-
 class Object4D {
     public:
         struct Material {
@@ -55,12 +54,26 @@ class Object4D {
             vec3 specular;
         };
 
+        struct ObjInfo {
+            GLfloat *vertices;
+            int numVertices;
+            GLuint *indices;
+            int numTriangles;
+            vec4 &pos;
+            mat4 &model4D;
+            mat4 &model3D;
+            mat4 &proj3D;
+            Material &mat;
+            Light &l;
+        };
+
         // Quite a few unsafe patterns here, must refactor to be safe
         // Also some silly groupings (e.g. lights in object?)
         Object4D();
+        Object4D(ObjInfo info);
         ~Object4D();
         void setData(GLfloat *vertexArray, int numVertices, 
-                     GLuint *indexArray, int numTriangles);
+                GLuint *indexArray, int numTriangles);
         void setPos(vec4 &position);
         void setModel4D(mat4 &model);
         void setModel3D(mat4 &model);
@@ -70,6 +83,8 @@ class Object4D {
         void prepare(GLfloat w, mat4 &rotMatrix4D);
         void buffer();
         void draw(vec3 &camPos, mat4 &view3D, Shader &shad);
+        void draw(GLfloat w, mat4 &rotMatrix4D, vec3 &camPos, mat4 &view3D,
+                  Shader &shad);
 
     private:
         vector<vec4> verts;

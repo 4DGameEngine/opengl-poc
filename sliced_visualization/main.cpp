@@ -195,37 +195,36 @@ int main()
                                        0.1f, 100.0f);
         vec3 camPos = camera.Position;
 
-        // Hyperfrustrum
-        Object4D hyperFrustrumObj;
-        hyperFrustrumObj.setData(vertices_hyperfrustrum,
-                                 sizeof(vertices_hyperfrustrum)/(4 * sizeof(GL_FLOAT)),
-                                 indices_hyperfrustrum,
-                                 sizeof(indices_hyperfrustrum)/(3 * sizeof(GL_FLOAT)));
-        hyperFrustrumObj.setPos(posFrustrum4D);
-        hyperFrustrumObj.setModel4D(modelFrustrum4D);
-        hyperFrustrumObj.setModel3D(model3D);
-        hyperFrustrumObj.setProj3D(proj3D);
-        hyperFrustrumObj.setMaterial(frustrumMat);
-        hyperFrustrumObj.setLight(light);
-        hyperFrustrumObj.prepare(w, rotMatrix4D);
-        hyperFrustrumObj.buffer();
-        hyperFrustrumObj.draw(camPos, view3D, frustrumShader);
+        // Create Objects
+        Object4D hyperFrustrumObj (Object4D::ObjInfo {
+            vertices_hyperfrustrum,
+            sizeof(vertices_hyperfrustrum)/(4 * sizeof(GL_FLOAT)),
+            indices_hyperfrustrum,
+            sizeof(indices_hyperfrustrum)/(3 * sizeof(GL_FLOAT)),
+            posFrustrum4D,
+            modelFrustrum4D,
+            model3D,
+            proj3D,
+            frustrumMat,
+            light,
+        });
 
-        // Hypertetrahedron
-        Object4D hyperTetrahedronObj;
-        hyperTetrahedronObj.setData(vertices_hypertetrahedron,
-                                    sizeof(vertices_hypertetrahedron)/(4 * sizeof(GL_FLOAT)),
-                                    indices_hypertetrahedron,
-                                    sizeof(indices_hypertetrahedron)/(3 * sizeof(GL_FLOAT)));
-        hyperTetrahedronObj.setPos(posTetrahedron4D);
-        hyperTetrahedronObj.setModel4D(modelTetrahedron4D);
-        hyperTetrahedronObj.setModel3D(model3D);
-        hyperTetrahedronObj.setProj3D(proj3D);
-        hyperTetrahedronObj.setMaterial(tetrahedronMat);
-        hyperTetrahedronObj.setLight(light);
-        hyperTetrahedronObj.prepare(w, rotMatrix4D);
-        hyperTetrahedronObj.buffer();
-        hyperTetrahedronObj.draw(camPos, view3D, tetrahedronShader);
+        Object4D hyperTetrahedronObj (Object4D::ObjInfo {
+            vertices_hypertetrahedron,
+            sizeof(vertices_hypertetrahedron)/(4 * sizeof(GL_FLOAT)),
+            indices_hypertetrahedron,
+            sizeof(indices_hypertetrahedron)/(3 * sizeof(GL_FLOAT)),
+            posTetrahedron4D,
+            modelTetrahedron4D,
+            model3D,
+            proj3D,
+            tetrahedronMat,
+            light,
+        });
+
+        // Draw
+        hyperFrustrumObj.draw(w, rotMatrix4D, camPos, view3D, frustrumShader);
+        hyperTetrahedronObj.draw(w, rotMatrix4D, camPos, view3D, tetrahedronShader);
         
         // Swap the screen buffers*/
         glfwSwapBuffers(window);

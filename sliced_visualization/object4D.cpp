@@ -1,14 +1,21 @@
 #include "object4D.h"
 
-#include <iostream>
-
-using namespace std;
-
 Object4D::Object4D() : verts(),
                        model3D(1.0f),
                        VAO(0),
                        VBO(0)
 {
+}
+
+Object4D::Object4D(ObjInfo info)
+{
+    setData(info.vertices, info.numVertices, info.indices, info.numTriangles);
+    setPos(info.pos);
+    setModel4D(info.model4D);
+    setModel3D(info.model3D);
+    setProj3D(info.proj3D);
+    setMaterial(info.mat);
+    setLight(info.l);
 }
 
 Object4D::~Object4D()
@@ -135,4 +142,12 @@ void Object4D::draw(vec3 &camPos, mat4 &view3D, Shader &shad)
     glBindVertexArray(VAO);
     glDrawArrays(GL_TRIANGLES, 0, sliced.size()/6);
     glBindVertexArray(0);
+}
+
+void Object4D::draw(GLfloat w, mat4 &rotMatrix4D, vec3 &camPos, mat4 &view3D,
+                    Shader &shad)
+{
+    prepare(w, rotMatrix4D);
+    buffer();
+    draw(camPos, view3D, shad);
 }
