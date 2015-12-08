@@ -29,8 +29,8 @@ namespace utils4D
                   const vec4 &over);
     vec4 cross4D(const vec4 &v0, const vec4 &v1, const vec4 &v2);
 
-    void rawSlice(vector<vec4> vertices, const GLuint indices[], int numTriangles,
-                  GLfloat w, vector<Point_3> &intersects);
+    void rawSlice(const vector<vec4> &vertices, const GLuint indices[], 
+                  int numTriangles, GLfloat w, vector<Point_3> &intersects);
     void getHull(const vector<Point_3> &raw, vector<GLfloat> &buf);
 
     vec4 intersectLine(const vec4 &start, const vec4 &end, const GLfloat w,

@@ -53,8 +53,8 @@ glm::vec4 utils4D::cross4D(const vec4 &v0, const vec4 &v1, const vec4 &v2)
     return crossVec;
 }
 
-void utils4D::rawSlice(vector<vec4> vertices, const GLuint indices[], int numTriangles,
-                       GLfloat w, vector<Point_3> &intersects)
+void utils4D::rawSlice(const vector<vec4> &vertices, const GLuint indices[], 
+                       int numTriangles, GLfloat w, vector<Point_3> &intersects)
 {
     // Calculate intersections with each triangle
     for (int i = 0; i < numTriangles; i++) {

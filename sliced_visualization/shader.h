@@ -33,7 +33,6 @@ class Shader
         void addVert(const GLchar *vertexPath);
         void link();
         void use();
-        void test() {};
     private:
         std::string fragmentPath;
         std::string vertexPath;
