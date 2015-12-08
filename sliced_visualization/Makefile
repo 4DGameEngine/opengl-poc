@@ -13,6 +13,7 @@ OGL_INCLUDE_PATH=$(HOME)/opengl/include
 OGL_STATIC_LIBS=$(OGL_LIBRARY_PATH)/libGLEW.a $(OGL_LIBRARY_PATH)/libsoil2.a
 OGL_DYNAMIC_LIBS=-lglfw -lCGAL -lCGAL_Core -lgmp
 OUTFILE=sliced
+OUTFILE_DEMO=demo
 
 UNAME_S=$(shell uname -s)
 ifeq ($(UNAME_S),Linux)
@@ -25,6 +26,11 @@ ifeq ($(UNAME_S),Darwin)
 endif
 	
 all: build run
+
+all_demo: demo run_demo
+
+demo: demo.o shader.o camera.o utils4D.o object4D.o
+	$(LD) $^ -o $(OUTFILE_DEMO) -L$(OGL_LIBRARY_PATH) $(LDFLAGS) -Wl,-rpath $(OGL_LIBRARY_PATH) $(OGL_STATIC_LIBS) $(OGL_DYNAMIC_LIBS) $(OGL_EXTRA_LIBS)
 
 build: main.o shader.o camera.o utils4D.o object4D.o
 	$(LD) $^ -o $(OUTFILE) -L$(OGL_LIBRARY_PATH) $(LDFLAGS) -Wl,-rpath $(OGL_LIBRARY_PATH) $(OGL_STATIC_LIBS) $(OGL_DYNAMIC_LIBS) $(OGL_EXTRA_LIBS)
@@ -44,10 +50,16 @@ utils4D.o: utils4D.cpp utils4D.h
 object4D.o: object4D.cpp object4D.h camera.h shader.h utils4D.h
 	$(CXX) $(CXXFLAGS) $(WARNINGS) -I$(OGL_INCLUDE_PATH) $<
 
-.PHONY: run clean
+demo.o: demo.cpp
+	$(CXX) $(CXXFLAGS) $(WARNINGS) -I$(OGL_INCLUDE_PATH) $<
+
+.PHONY: run run_demo clean
 
 run:
 	./$(OUTFILE)
 
+run_demo:
+	./$(OUTFILE_DEMO)
+
 clean:
-	rm -rf *.o $(OUTFILE)
+	rm -rf *.o $(OUTFILE) $(OUTFILE_DEMO)

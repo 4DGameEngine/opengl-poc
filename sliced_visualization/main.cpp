@@ -117,17 +117,6 @@ int main()
     // Hax
     #include "data.cpp"
 
-    // Pack data into vector
-    vector<vec4> hyperfrustrum;
-    utils4D::packVector4D(vertices_hyperfrustrum, 
-                          sizeof(vertices_hyperfrustrum)/(4 * sizeof(GL_FLOAT)),
-                          hyperfrustrum);
-    
-    vector<vec4> hypertetrahedron;
-    utils4D::packVector4D(vertices_hypertetrahedron, 
-                          sizeof(vertices_hypertetrahedron)/(4 * sizeof(GL_FLOAT)),
-                          hypertetrahedron);
-
     // Shader creation
     Shader frustrumShader;
     frustrumShader.addVert("light_vert.glsl");

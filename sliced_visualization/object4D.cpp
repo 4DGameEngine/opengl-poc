@@ -7,7 +7,7 @@ Object4D::Object4D() : verts(),
 {
 }
 
-Object4D::Object4D(ObjInfo info)
+Object4D::Object4D(ObjInfo &&info)
 {
     setData(info.vertices, info.numVertices, info.indices, info.numTriangles);
     setPos(info.pos);

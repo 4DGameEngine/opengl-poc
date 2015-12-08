@@ -59,18 +59,18 @@ class Object4D {
             int numVertices;
             GLuint *indices;
             int numTriangles;
-            vec4 &pos;
-            mat4 &model4D;
-            mat4 &model3D;
-            mat4 &proj3D;
-            Material &mat;
-            Light &l;
+            vec4 pos;
+            mat4 model4D;
+            mat4 model3D;
+            mat4 proj3D;
+            Material mat;
+            Light l;
         };
 
         // Quite a few unsafe patterns here, must refactor to be safe
         // Also some silly groupings (e.g. lights in object?)
         Object4D();
-        Object4D(ObjInfo info);
+        Object4D(ObjInfo &&info);
         ~Object4D();
         void setData(GLfloat *vertexArray, int numVertices, 
                 GLuint *indexArray, int numTriangles);

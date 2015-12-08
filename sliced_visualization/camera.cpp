@@ -52,6 +52,10 @@ glm::mat4 Camera::GetRotMatrix4D()
 void Camera::ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime)
 {
     GLfloat velocity = MovementSpeed * deltaTime;
+    glm::vec4 pos = glm::vec4(Front, w);
+    glm::mat4 rot = GetRotMatrix4D();
+    glm::vec4 radj = rot * glm::vec4(Front, w);
+    glm::vec4 fadj = rot * glm::vec4(Front, w);
     switch (direction) {
         case FORWARD:
             Position += Front * velocity;
