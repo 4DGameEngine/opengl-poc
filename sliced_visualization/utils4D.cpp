@@ -164,11 +164,12 @@ void utils4D::packVector4D(const GLfloat *objArray, const int numVertices,
     }
 }
 
-void utils4D::transform4D(const vector<vec4> &object, const vec4 &camPos,
-                          const vec4 &objPos, const mat4 &model4D,
-                          const mat4 &view4D, vector<vec4> &transformed)
+void utils4D::transform4D(const vector<vec4> &object, const GLfloat w,
+                          const mat4 &camRot4D, const vec4 &objPos, 
+                          const mat4 &model4D, vector<vec4> &transformed)
 {
+    vec4 relPosOffset = objPos - vec4(0.0f, 0.0f, 0.0f, w);
     for (const auto &vert : object)
-        transformed.push_back(view4D * (model4D * vert + objPos - camPos));
+        transformed.push_back(camRot4D * (model4D * vert + relPosOffset));
 }
 

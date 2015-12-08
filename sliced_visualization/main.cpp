@@ -54,10 +54,13 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 
 // Camera
-Camera camera(vec3(0.0f, 0.0f, 0.2f));
+Camera camera(vec3(0.0f, 0.0f, 0.0f));
 bool keys[1024];
 GLfloat lastX = WIDTH/2, lastY = HEIGHT/2;
 bool firstMouse = true;
+
+// Options
+GLfloat theta = 0.0f;
 
 int main()
 {
@@ -166,16 +169,11 @@ int main()
 
         // 4D-3D Transformations
         // Camera
-        mat4 view4D;
-        vec4 from(0.0f, 0.0f, 0.0f, 0.0f), to(0.0f, 0.0f, 0.0f, -1.0f); 
-        vec4 up(0.0f, 1.0f, 0.0f, 0.0f), over(0.0f, 0.0f, 1.0f, 0.0f);
-        view4D = utils4D::lookAt4D(from, to, up, over);
-        mat4 model4D = camera.GetModel4D();
+        mat4 rotMatrix4D = camera.GetRotMatrix4D(); // Rotation of slice
 
         // Frustrum
-        mat4 modelFrustrum4D(1.0f);
         vec4 posFrustrum4D(-2.0f, 0.0f, 0.0f, 0.0f);
-        GLfloat theta = glm::radians((GLfloat)glfwGetTime() * 50.0f);
+        mat4 modelFrustrum4D(1.0f);
         GLfloat cs1 = cos(theta), sn1 = sin(theta);
         modelFrustrum4D[0][0] = cs1;
         modelFrustrum4D[0][3] = -sn1;
@@ -183,24 +181,24 @@ int main()
         modelFrustrum4D[3][3] = cs1;
 
         // Tetrahedron
-        mat4 modelTetrahedron4D(1.0f);
         vec4 posTetrahedron4D(2.0f, 0.0f, 0.0f, 0.0f);
-        GLfloat theta2 = glm::radians((GLfloat)glfwGetTime() * 20.0f);
-        GLfloat cs2 = cos(theta2), sn2 = sin(theta2);
+        mat4 modelTetrahedron4D(1.0f);
+        GLfloat cs2 = cos(theta * -0.8f), sn2 = sin(theta * -0.8f);
         modelTetrahedron4D[0][0] = cs2;
         modelTetrahedron4D[0][3] = -sn2;
         modelTetrahedron4D[3][0] = sn2;
         modelTetrahedron4D[3][3] = cs2;
 
         // Transform objects
+        // There is no perspective/parallel projection so no view4D needed
         vector<vec4> transformedFrustrum;
-        utils4D::transform4D(hyperfrustrum, from, posFrustrum4D, 
-                             modelFrustrum4D * model4D, view4D, 
+        utils4D::transform4D(hyperfrustrum, camera.w, rotMatrix4D,
+                             posFrustrum4D, modelFrustrum4D, 
                              transformedFrustrum);
 
         vector<vec4> transformedTetrahedron;
-        utils4D::transform4D(hypertetrahedron, from, posTetrahedron4D, 
-                             modelTetrahedron4D * model4D, view4D, 
+        utils4D::transform4D(hypertetrahedron, camera.w, rotMatrix4D,
+                             posTetrahedron4D, modelTetrahedron4D,
                              transformedTetrahedron);
 
         // Get slice
@@ -208,7 +206,7 @@ int main()
         vector<Point_3> raw_hyperfrustrum;
         utils4D::rawSlice(transformedFrustrum, indices_hyperfrustrum,
                           sizeof(indices_hyperfrustrum)/(3 * sizeof(GL_FLOAT)),
-                          camera.w, raw_hyperfrustrum);
+                          0.0f, raw_hyperfrustrum);
 
         vector<GLfloat> sliced_hyperfrustrum;
         utils4D::getHull(raw_hyperfrustrum, sliced_hyperfrustrum);
@@ -217,7 +215,7 @@ int main()
         vector<Point_3> raw_hypertetrahedron;
         utils4D::rawSlice(transformedTetrahedron, indices_hypertetrahedron,
                           sizeof(indices_hypertetrahedron)/(3 * sizeof(GL_FLOAT)),
-                          camera.w, raw_hypertetrahedron);
+                          0.0f, raw_hypertetrahedron);
 
         vector<GLfloat> sliced_hypertetrahedron;
         utils4D::getHull(raw_hypertetrahedron, sliced_hypertetrahedron);
@@ -375,21 +373,31 @@ int main()
 void do_movement(GLfloat deltaTime)
 {
     // Camera controls
-    if(keys[GLFW_KEY_W])
+    if (keys[GLFW_KEY_W])
         camera.ProcessKeyboard(FORWARD, deltaTime);
-    if(keys[GLFW_KEY_S])
+    if (keys[GLFW_KEY_S])
         camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if(keys[GLFW_KEY_A])
+    if (keys[GLFW_KEY_A])
         camera.ProcessKeyboard(LEFT, deltaTime);
-    if(keys[GLFW_KEY_D])
+    if (keys[GLFW_KEY_D])
         camera.ProcessKeyboard(RIGHT, deltaTime);
-    // Change w
-    if(keys[GLFW_KEY_Z])
+
+    // Change stuff
+    if (keys[GLFW_KEY_E])
         camera.ProcessKeyboard(W_ADD, deltaTime);
-    if(keys[GLFW_KEY_X])
+    if (keys[GLFW_KEY_Q])
         camera.ProcessKeyboard(W_SUB, deltaTime);
-    if(keys[GLFW_KEY_1])
-        camera.ProcessKeyboard(YZ_ROT, deltaTime);
+    if (keys[GLFW_KEY_1])
+        camera.ProcessKeyboard(YZ_ROT_DEC, deltaTime);
+    if (keys[GLFW_KEY_3])
+        camera.ProcessKeyboard(YZ_ROT_INC, deltaTime);
+    if (keys[GLFW_KEY_2]) {
+        camera = Camera(vec3(0.0f, 0.0f, 0.0f));
+        theta = 0.0f;
+    }
+    if (keys[GLFW_KEY_R])
+        theta += glm::radians(0.7f);
+
     cout << "---------------------" << endl;
     cout << "Position: " << to_string(camera.Position) << endl;
     cout << "W-slice: " << camera.w << endl;

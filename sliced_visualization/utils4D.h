@@ -37,9 +37,9 @@ namespace utils4D
                        bool &success);
     void packVector4D(const GLfloat *objArray, const int numVertices,
                       vector<vec4> &objVector);
-    void transform4D(const vector<vec4> &object, const vec4 &camPos,
-                     const vec4 &objPos, const mat4 &model4D,
-                     const mat4 &view4D, vector<vec4> &transformed);
+    void transform4D(const vector<vec4> &object, const GLfloat w,
+                     const mat4 &camRot4D, const vec4 &objPos, 
+                     const mat4 &model4D, vector<vec4> &transformed);
 }
 
 #endif

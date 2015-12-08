@@ -31,14 +31,15 @@ enum Camera_Movement
     RIGHT,
     W_ADD,
     W_SUB,
-    YZ_ROT,
+    YZ_ROT_INC,
+    YZ_ROT_DEC,
 };
 
 // Default camera values
 const GLfloat YAW        = -90.0f;
 const GLfloat PITCH      =  0.0f;
 const GLfloat SPEED      =  3.0f;
-const GLfloat ROTATION_SPEED = glm::radians(3.0f);
+const GLfloat ROTATION_SPEED = glm::radians(48.0f);
 const GLfloat SENSITIVTY =  0.25f;
 const GLfloat ZOOM       =  45.0f;
 
@@ -54,9 +55,11 @@ class Camera
         GLfloat w;
         GLfloat w_unit;
         GLfloat theta_yz;
+
         // Euler Angles
         GLfloat Yaw;
         GLfloat Pitch;
+
         // Camera options
         GLfloat MovementSpeed;
         GLfloat RotationSpeed;
@@ -76,7 +79,7 @@ class Camera
         // LookAt Matrix
         glm::mat4 GetViewMatrix();
         
-        glm::mat4 GetModel4D();
+        glm::mat4 GetRotMatrix4D();
 
         // Processes input received from any keyboard-like input system. 
         // Accepts input parameter in the form of camera defined ENUM 
